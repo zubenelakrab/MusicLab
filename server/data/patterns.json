@@ -1,0 +1,202 @@
+[
+  {
+    "id": "preset-basic-1",
+    "name": "Kick Basico",
+    "code": "bd*4",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["basico", "drums"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-basic-2",
+    "name": "Beat Simple",
+    "code": "bd sd bd sd",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["basico", "drums"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-basic-3",
+    "name": "Hi-Hats Rapidos",
+    "code": "hh*8",
+    "params": { "bpm": 120, "gain": 0.5, "cutoff": 3000, "resonance": 0, "speed": 1 },
+    "tags": ["basico", "hats"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-house-1",
+    "name": "House Clasico",
+    "code": "[bd, hh*4, ~ sd ~ sd]",
+    "params": { "bpm": 128, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["house", "4x4"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-house-2",
+    "name": "House con Open Hat",
+    "code": "[bd, oh*2, ~ sd]",
+    "params": { "bpm": 125, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["house", "4x4"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-house-3",
+    "name": "Offbeat House",
+    "code": "bd [~ bd] sd [bd ~]",
+    "params": { "bpm": 124, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["house", "offbeat"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-techno-1",
+    "name": "Techno Basico",
+    "code": "[bd, hh*8, ~ ~ sd ~]",
+    "params": { "bpm": 135, "gain": 0.8, "cutoff": 1500, "resonance": 5, "speed": 1 },
+    "tags": ["techno", "4x4"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-techno-2",
+    "name": "Techno Industrial",
+    "code": "[bd*2, hh*8, [~ sd]*2]",
+    "params": { "bpm": 140, "gain": 0.9, "cutoff": 1200, "resonance": 8, "speed": 1 },
+    "tags": ["techno", "industrial"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-break-1",
+    "name": "Breakbeat Basico",
+    "code": "bd [~ bd] [sd ~] bd",
+    "params": { "bpm": 140, "gain": 0.8, "cutoff": 2500, "resonance": 0, "speed": 1 },
+    "tags": ["breakbeat", "dnb"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-break-2",
+    "name": "Amen Simplificado",
+    "code": "[bd ~ sd bd] [~ sd ~ bd]",
+    "params": { "bpm": 160, "gain": 0.8, "cutoff": 3000, "resonance": 0, "speed": 1 },
+    "tags": ["breakbeat", "jungle"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-break-3",
+    "name": "Jungle Pattern",
+    "code": "bd [~ [bd bd]] sd [bd ~]",
+    "params": { "bpm": 170, "gain": 0.8, "cutoff": 2500, "resonance": 0, "speed": 1 },
+    "tags": ["jungle", "dnb"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-hiphop-1",
+    "name": "Boom Bap",
+    "code": "bd ~ [~ bd] sd",
+    "params": { "bpm": 90, "gain": 0.9, "cutoff": 1800, "resonance": 0, "speed": 1 },
+    "tags": ["hiphop", "boombap"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-hiphop-2",
+    "name": "Hip-Hop Groove",
+    "code": "bd ~ sd [~ bd]",
+    "params": { "bpm": 85, "gain": 0.85, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["hiphop", "groove"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-funk-1",
+    "name": "Funk Sincopado",
+    "code": "[bd ~ ~ bd] [~ sd ~ ~]",
+    "params": { "bpm": 110, "gain": 0.8, "cutoff": 2200, "resonance": 0, "speed": 1 },
+    "tags": ["funk", "groove"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-euclidean-1",
+    "name": "Euclidiano 3-8",
+    "code": "bd(3,8)",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["euclidiano", "experimental"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-euclidean-2",
+    "name": "Cinquillo (5-8)",
+    "code": "bd(5,8)",
+    "params": { "bpm": 100, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["euclidiano", "latin"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-euclidean-3",
+    "name": "Poliritmo Euclidiano",
+    "code": "[bd(3,8), hh(5,8)]",
+    "params": { "bpm": 115, "gain": 0.8, "cutoff": 2500, "resonance": 0, "speed": 1 },
+    "tags": ["euclidiano", "polyrhythm"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-poly-1",
+    "name": "Poliritmo 3 vs 4",
+    "code": "bd*3, hh*4",
+    "params": { "bpm": 120, "gain": 0.7, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["polyrhythm", "experimental"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-poly-2",
+    "name": "Capas Multiples",
+    "code": "[bd(3,8), sd(5,8,2), hh*8]",
+    "params": { "bpm": 125, "gain": 0.75, "cutoff": 2200, "resonance": 0, "speed": 1 },
+    "tags": ["polyrhythm", "complex"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-exp-1",
+    "name": "Multiplicador Variable",
+    "code": "bd*<3 4 5>",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["experimental", "generativo"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-exp-2",
+    "name": "Secuencia Probabilistica",
+    "code": "[bd?, sd?, hh?]*4",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["experimental", "random"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-exp-3",
+    "name": "Patrones Alternantes",
+    "code": "<[bd sd] [bd bd sd]>",
+    "params": { "bpm": 120, "gain": 0.8, "cutoff": 2000, "resonance": 0, "speed": 1 },
+    "tags": ["experimental", "generativo"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-melody-1",
+    "name": "Arpeggio Simple",
+    "code": "arpy:0 arpy:1 arpy:2 arpy:3",
+    "params": { "bpm": 120, "gain": 0.6, "cutoff": 3500, "resonance": 0, "speed": 1 },
+    "tags": ["melodia", "arpegio"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-melody-2",
+    "name": "Bass Line",
+    "code": "bass:0 ~ bass:1 bass:2",
+    "params": { "bpm": 110, "gain": 0.8, "cutoff": 1500, "resonance": 3, "speed": 1 },
+    "tags": ["melodia", "bass"],
+    "createdAt": 1702569600000
+  },
+  {
+    "id": "preset-perc-1",
+    "name": "Tabla Groove",
+    "code": "tabla:0 tabla:1 tabla:2 tabla:0",
+    "params": { "bpm": 100, "gain": 0.7, "cutoff": 2500, "resonance": 0, "speed": 1 },
+    "tags": ["world", "percussion"],
+    "createdAt": 1702569600000
+  }
+]
