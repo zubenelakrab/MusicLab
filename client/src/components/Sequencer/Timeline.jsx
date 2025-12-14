@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, VolumeX, Volume2, Headphones, Trash2 } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
+import LayerScope from './LayerScope';
 
 // Colors for layers
 const LAYER_COLORS = [
@@ -130,6 +131,15 @@ export default function Timeline() {
                         </button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Oscilloscope - FT2 style */}
+                  <div className="w-24 h-10 flex-shrink-0 mx-2 rounded overflow-hidden border border-studio-600">
+                    <LayerScope
+                      layerIndex={index}
+                      isActive={isActive}
+                      isPlaying={isPlaying}
+                    />
                   </div>
 
                   {/* Pattern code */}
