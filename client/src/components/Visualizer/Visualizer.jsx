@@ -7,7 +7,7 @@ const MODES = [
   { id: 'circle', name: 'Circular' },
   { id: 'starburst', name: 'Starburst' },
   { id: 'tunnel', name: 'Tunel' },
-  { id: 'plasma', name: 'Plasma' },
+  { id: 'nebula', name: 'Nebula' },
 ];
 
 const COLORS = [
@@ -24,7 +24,7 @@ export default function Visualizer({ isOpen, onClose }) {
   const animationRef = useRef(null);
   const starsRef = useRef([]);
   const tunnelRef = useRef({ rings: [], rotation: 0 });
-  const plasmaRef = useRef({ offset: 0 });
+  const nebulaRef = useRef({ blobs: [], time: 0 });
 
   const [mode, setMode] = useState('bars');
   const [colorScheme, setColorScheme] = useState('neon');
@@ -422,69 +422,105 @@ export default function Visualizer({ isOpen, onClose }) {
       ctx.shadowBlur = 0;
     };
 
-    // === PLASMA MODE ===
-    const drawPlasma = (time) => {
+    // === NEBULA MODE ===
+    const drawNebula = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       const sum = dataArray.reduce((a, b) => a + b, 0);
       if (sum < 100) simulateAudio(time);
 
       const { bass, mid, high } = getAudioLevels();
-      const imageData = ctx.createImageData(canvas.width, canvas.height);
-      const data = imageData.data;
 
-      plasmaRef.current.offset += 0.02 + bass * 0.1;
-      const t = plasmaRef.current.offset;
+      // Fade trail effect
+      ctx.fillStyle = palette.bg + '15';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const cellSize = 4; // Lower resolution for performance
+      nebulaRef.current.time = time;
+      const t = time * 0.001;
 
-      for (let y = 0; y < canvas.height; y += cellSize) {
-        for (let x = 0; x < canvas.width; x += cellSize) {
-          const nx = x / canvas.width;
-          const ny = y / canvas.height;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
 
-          // Plasma formula
-          let v = Math.sin(nx * 10 + t);
-          v += Math.sin((ny * 10 + t) / 2);
-          v += Math.sin((nx * 10 + ny * 10 + t) / 2);
-          v += Math.sin(Math.sqrt(nx * nx * 100 + ny * ny * 100) + t);
+      // Draw flowing nebula blobs
+      const blobCount = 8;
+      for (let i = 0; i < blobCount; i++) {
+        const angle = (i / blobCount) * Math.PI * 2 + t * 0.3;
+        const distance = 150 + Math.sin(t + i) * 50 + bass * 100;
 
-          // Add audio reactivity
-          v += bass * Math.sin(nx * 20 + t * 2);
-          v += mid * Math.cos(ny * 15 + t * 1.5);
+        const x = centerX + Math.cos(angle) * distance;
+        const y = centerY + Math.sin(angle) * distance;
+        const size = 80 + mid * 100 + Math.sin(t * 2 + i) * 30;
 
-          v = (v + 4) / 8; // Normalize to 0-1
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        const color = palette.colors[i % palette.colors.length];
+        gradient.addColorStop(0, color + '60');
+        gradient.addColorStop(0.5, color + '30');
+        gradient.addColorStop(1, 'transparent');
 
-          // Map to palette colors
-          const colorIndex = Math.floor(v * palette.colors.length) % palette.colors.length;
-          const color = palette.colors[colorIndex];
-          const r = parseInt(color.slice(1, 3), 16);
-          const g = parseInt(color.slice(3, 5), 16);
-          const b = parseInt(color.slice(5, 7), 16);
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+      }
 
-          // Fill cell
-          for (let dy = 0; dy < cellSize && y + dy < canvas.height; dy++) {
-            for (let dx = 0; dx < cellSize && x + dx < canvas.width; dx++) {
-              const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
-              data[idx] = r;
-              data[idx + 1] = g;
-              data[idx + 2] = b;
-              data[idx + 3] = 255;
-            }
-          }
+      // Inner rotating energy
+      for (let ring = 0; ring < 3; ring++) {
+        const ringRadius = 50 + ring * 40 + bass * 30;
+        const segments = 12;
+
+        for (let i = 0; i < segments; i++) {
+          const angle = (i / segments) * Math.PI * 2 + t * (1 + ring * 0.5);
+          const nextAngle = ((i + 1) / segments) * Math.PI * 2 + t * (1 + ring * 0.5);
+
+          const wobble = Math.sin(t * 3 + i + ring) * 10 * high;
+          const r1 = ringRadius + wobble;
+          const r2 = ringRadius + Math.sin(t * 3 + i + 1 + ring) * 10 * high;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + Math.cos(angle) * r1, centerY + Math.sin(angle) * r1);
+          ctx.lineTo(centerX + Math.cos(nextAngle) * r2, centerY + Math.sin(nextAngle) * r2);
+
+          const color = palette.colors[(i + ring) % palette.colors.length];
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3 + bass * 5;
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = color;
+          ctx.stroke();
         }
       }
 
-      ctx.putImageData(imageData, 0, 0);
+      // Central core pulse
+      const coreSize = 30 + bass * 50;
+      const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreSize);
+      coreGradient.addColorStop(0, '#ffffff');
+      coreGradient.addColorStop(0.3, palette.colors[0]);
+      coreGradient.addColorStop(0.6, palette.colors[1] + '80');
+      coreGradient.addColorStop(1, 'transparent');
 
-      // Overlay vignette
-      const vignette = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, canvas.height * 0.3,
-        canvas.width / 2, canvas.height / 2, canvas.height * 0.8
-      );
-      vignette.addColorStop(0, 'transparent');
-      vignette.addColorStop(1, palette.bg);
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, coreSize, 0, Math.PI * 2);
+      ctx.fillStyle = coreGradient;
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = palette.colors[0];
+      ctx.fill();
+
+      // Sparkles on high frequencies
+      if (high > 0.3) {
+        for (let i = 0; i < 10; i++) {
+          const sparkAngle = Math.random() * Math.PI * 2;
+          const sparkDist = Math.random() * 300 + 50;
+          const sparkX = centerX + Math.cos(sparkAngle) * sparkDist;
+          const sparkY = centerY + Math.sin(sparkAngle) * sparkDist;
+          const sparkSize = Math.random() * 3 + 1;
+
+          ctx.beginPath();
+          ctx.arc(sparkX, sparkY, sparkSize, 0, Math.PI * 2);
+          ctx.fillStyle = palette.colors[Math.floor(Math.random() * 4)];
+          ctx.shadowBlur = 10;
+          ctx.fill();
+        }
+      }
+
+      ctx.shadowBlur = 0;
     };
 
     const draw = (timestamp) => {
@@ -496,7 +532,7 @@ export default function Visualizer({ isOpen, onClose }) {
         case 'circle': drawCircle(time); break;
         case 'starburst': drawStarburst(time); break;
         case 'tunnel': drawTunnel(time); break;
-        case 'plasma': drawPlasma(time); break;
+        case 'nebula': drawNebula(time); break;
         default: drawBars(time);
       }
 
