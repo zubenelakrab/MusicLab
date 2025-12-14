@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getAudioContext } from '@strudel/webaudio';
+import { getAnalyser } from '../../strudel/engine';
 
 const MODES = [
   { id: 'bars', name: 'Barras' },
@@ -17,39 +17,6 @@ const COLORS = [
   { id: 'rainbow', name: 'Arcoiris', primary: 'rainbow', secondary: 'rainbow', bg: '#000000' },
   { id: 'sunset', name: 'Atardecer', primary: '#ff7b00', secondary: '#ff006a', bg: '#1a0011' },
 ];
-
-// Global analyser that persists
-let globalAnalyser = null;
-let globalGain = null;
-
-function getOrCreateAnalyser() {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return null;
-
-    if (!globalAnalyser) {
-      globalAnalyser = ctx.createAnalyser();
-      globalAnalyser.fftSize = 1024;
-      globalAnalyser.smoothingTimeConstant = 0.8;
-      globalAnalyser.minDecibels = -90;
-      globalAnalyser.maxDecibels = -10;
-
-      // Try to connect to destination
-      // This is a workaround - we create a gain node connected to the destination
-      // and route audio through it
-      if (!globalGain) {
-        globalGain = ctx.createGain();
-        globalGain.gain.value = 1;
-        globalGain.connect(ctx.destination);
-        globalGain.connect(globalAnalyser);
-      }
-    }
-    return globalAnalyser;
-  } catch (err) {
-    console.warn('Could not create analyser:', err);
-    return null;
-  }
-}
 
 export default function Visualizer({ isOpen, onClose }) {
   const canvasRef = useRef(null);
@@ -102,7 +69,7 @@ export default function Visualizer({ isOpen, onClose }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const analyser = getOrCreateAnalyser();
+    const analyser = getAnalyser();
 
     // Setup buffers
     const bufferLength = analyser ? analyser.frequencyBinCount : 256;

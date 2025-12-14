@@ -5,50 +5,68 @@ let repl = null;
 let audioInitialized = false;
 let currentLayers = [];
 let analyserNode = null;
+let analyserConnected = false;
+let interceptInstalled = false;
 
 // Export getAudioContext for visualizer
 export { getAudioContext };
+
+// Install intercept to capture audio going to destination
+function installDestinationIntercept() {
+  if (interceptInstalled) return;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    // Create analyser node
+    analyserNode = ctx.createAnalyser();
+    analyserNode.fftSize = 2048;
+    analyserNode.smoothingTimeConstant = 0.8;
+    analyserNode.minDecibels = -90;
+    analyserNode.maxDecibels = -10;
+
+    // Store original connect method
+    const originalConnect = GainNode.prototype.connect;
+
+    // Monkey-patch connect to intercept connections to destination
+    GainNode.prototype.connect = function(destination, ...args) {
+      // Check if connecting to the audio destination
+      if (destination === ctx.destination && analyserNode) {
+        console.log('[MusicLab] Intercepted connection to destination, routing through analyser');
+        // Route through analyser instead
+        originalConnect.call(this, analyserNode, ...args);
+        if (!analyserConnected) {
+          analyserNode.connect(ctx.destination);
+          analyserConnected = true;
+        }
+        return destination;
+      }
+      // Normal connection
+      return originalConnect.call(this, destination, ...args);
+    };
+
+    interceptInstalled = true;
+    console.log('[MusicLab] Destination intercept installed');
+  } catch (err) {
+    console.warn('[MusicLab] Could not install intercept:', err);
+  }
+}
 
 // Get or create analyser node for visualizer
 export function getAnalyser() {
   try {
     const ctx = getAudioContext();
-    if (!ctx || ctx.state !== 'running') return null;
+    if (!ctx) return null;
 
-    if (!analyserNode) {
-      analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 1024;
-      analyserNode.smoothingTimeConstant = 0.85;
+    // Make sure intercept is installed
+    if (!interceptInstalled) {
+      installDestinationIntercept();
     }
+
     return analyserNode;
   } catch (err) {
-    console.warn('[MusicLab] Could not create analyser:', err);
-    return null;
-  }
-}
-
-// Setup analyser connection (called after audio starts)
-export function setupAnalyser() {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
-    if (!analyserNode) {
-      analyserNode = ctx.createAnalyser();
-      analyserNode.fftSize = 1024;
-      analyserNode.smoothingTimeConstant = 0.85;
-    }
-
-    // Create a gain node to tap into the audio
-    const gainNode = ctx.createGain();
-    gainNode.gain.value = 1;
-    gainNode.connect(analyserNode);
-    gainNode.connect(ctx.destination);
-
-    console.log('[MusicLab] Analyser setup complete');
-    return gainNode;
-  } catch (err) {
-    console.warn('[MusicLab] Analyser setup failed:', err);
+    console.warn('[MusicLab] Could not get analyser:', err);
     return null;
   }
 }
@@ -57,7 +75,12 @@ export async function initAudio() {
   if (audioInitialized) return true;
 
   try {
+    // Wait for user click to initialize audio
     await initAudioOnFirstClick();
+
+    // Install intercept AFTER audio context is created but BEFORE Strudel connects
+    installDestinationIntercept();
+
     // Load default drum samples
     await samples('github:tidalcycles/dirt-samples');
     audioInitialized = true;
@@ -72,9 +95,7 @@ export async function initAudio() {
 export function createRepl() {
   if (repl) return repl;
 
-  repl = webaudioRepl({
-    // The repl will be ready but not playing
-  });
+  repl = webaudioRepl({});
 
   console.log('[MusicLab] REPL created');
   return repl;
