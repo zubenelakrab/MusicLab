@@ -4,6 +4,54 @@ import { mini } from '@strudel/mini';
 let repl = null;
 let audioInitialized = false;
 let currentLayers = [];
+let analyserNode = null;
+
+// Export getAudioContext for visualizer
+export { getAudioContext };
+
+// Get or create analyser node for visualizer
+export function getAnalyser() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx || ctx.state !== 'running') return null;
+
+    if (!analyserNode) {
+      analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 1024;
+      analyserNode.smoothingTimeConstant = 0.85;
+    }
+    return analyserNode;
+  } catch (err) {
+    console.warn('[MusicLab] Could not create analyser:', err);
+    return null;
+  }
+}
+
+// Setup analyser connection (called after audio starts)
+export function setupAnalyser() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    if (!analyserNode) {
+      analyserNode = ctx.createAnalyser();
+      analyserNode.fftSize = 1024;
+      analyserNode.smoothingTimeConstant = 0.85;
+    }
+
+    // Create a gain node to tap into the audio
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 1;
+    gainNode.connect(analyserNode);
+    gainNode.connect(ctx.destination);
+
+    console.log('[MusicLab] Analyser setup complete');
+    return gainNode;
+  } catch (err) {
+    console.warn('[MusicLab] Analyser setup failed:', err);
+    return null;
+  }
+}
 
 export async function initAudio() {
   if (audioInitialized) return true;

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
 import CodeEditor from './components/Editor/CodeEditor';
@@ -5,10 +6,12 @@ import SamplePad from './components/Editor/SamplePad';
 import CheatSheet from './components/Editor/CheatSheet';
 import PatternList from './components/PatternManager/PatternList';
 import Timeline from './components/Sequencer/Timeline';
+import Visualizer from './components/Visualizer/Visualizer';
 import { useStore } from './store';
 
 export default function App() {
   const { currentPattern } = useStore();
+  const [showVisualizer, setShowVisualizer] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-studio-900">
@@ -20,11 +23,24 @@ export default function App() {
           <div className="border-l border-studio-600 pl-4">
             <FileManager />
           </div>
+          <div className="border-l border-studio-600 pl-4">
+            <button
+              onClick={() => setShowVisualizer(true)}
+              className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1"
+              title="Abrir Visualizer"
+            >
+              <span>🎨</span>
+              <span>Visualizer</span>
+            </button>
+          </div>
         </div>
         <span className="text-sm text-gray-500">
           {currentPattern.name || 'Untitled'} - {currentPattern.layers?.length || 1} capas
         </span>
       </header>
+
+      {/* Visualizer Modal */}
+      <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar - Pattern Library */}
