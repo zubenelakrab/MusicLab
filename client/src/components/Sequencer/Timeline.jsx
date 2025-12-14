@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Plus, VolumeX, Volume2, Headphones, Trash2 } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 
@@ -47,9 +48,10 @@ export default function Timeline() {
         </div>
         <button
           onClick={() => addLayer()}
-          className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400"
+          className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center gap-1"
         >
-          + Capa
+          <Plus size={14} />
+          <span>Capa</span>
         </button>
       </div>
 
@@ -92,28 +94,28 @@ export default function Timeline() {
                           e.stopPropagation();
                           toggleLayerMute(index);
                         }}
-                        className={`w-5 h-5 text-xs rounded flex items-center justify-center ${
+                        className={`w-5 h-5 rounded flex items-center justify-center ${
                           layer.muted
                             ? 'bg-red-600 text-white'
                             : 'bg-studio-500 text-gray-400 hover:bg-studio-400'
                         }`}
                         title="Mute"
                       >
-                        M
+                        {layer.muted ? <VolumeX size={12} /> : <Volume2 size={12} />}
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleLayerSolo(index);
                         }}
-                        className={`w-5 h-5 text-xs rounded flex items-center justify-center ${
+                        className={`w-5 h-5 rounded flex items-center justify-center ${
                           layer.solo
                             ? 'bg-yellow-500 text-black'
                             : 'bg-studio-500 text-gray-400 hover:bg-studio-400'
                         }`}
                         title="Solo"
                       >
-                        S
+                        <Headphones size={12} />
                       </button>
                       {layers.length > 1 && (
                         <button
@@ -121,10 +123,10 @@ export default function Timeline() {
                             e.stopPropagation();
                             removeLayer(index);
                           }}
-                          className="w-5 h-5 text-xs rounded flex items-center justify-center bg-studio-500 text-gray-400 hover:bg-red-600 hover:text-white"
+                          className="w-5 h-5 rounded flex items-center justify-center bg-studio-500 text-gray-400 hover:bg-red-600 hover:text-white"
                           title="Eliminar"
                         >
-                          ×
+                          <Trash2 size={12} />
                         </button>
                       )}
                     </div>

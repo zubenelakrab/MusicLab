@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
 import CodeEditor from './components/Editor/CodeEditor';
@@ -26,10 +27,10 @@ export default function App() {
           <div className="border-l border-studio-600 pl-4">
             <button
               onClick={() => setShowVisualizer(true)}
-              className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1"
+              className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1.5"
               title="Abrir Visualizer"
             >
-              <span>🎨</span>
+              <Sparkles size={14} />
               <span>Visualizer</span>
             </button>
           </div>

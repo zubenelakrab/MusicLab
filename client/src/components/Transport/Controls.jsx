@@ -1,3 +1,4 @@
+import { Play, Square } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 
@@ -9,14 +10,18 @@ export default function Controls() {
     <div className="flex items-center gap-3">
       <button
         onClick={toggle}
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
           isPlaying
             ? 'bg-accent-secondary hover:bg-red-500'
             : 'bg-accent-primary hover:bg-emerald-400'
         }`}
         title={isPlaying ? 'Detener' : 'Reproducir'}
       >
-        {isPlaying ? '■' : '▶'}
+        {isPlaying ? (
+          <Square size={14} fill="currentColor" />
+        ) : (
+          <Play size={16} fill="currentColor" className="ml-0.5" />
+        )}
       </button>
 
       <div className="flex items-center gap-2">
@@ -40,8 +45,8 @@ export default function Controls() {
       </div>
 
       {!audioReady && (
-        <span className="text-xs text-yellow-500">
-          Click ▶ para iniciar
+        <span className="text-xs text-yellow-500 flex items-center gap-1">
+          <Play size={12} /> Click para iniciar
         </span>
       )}
 

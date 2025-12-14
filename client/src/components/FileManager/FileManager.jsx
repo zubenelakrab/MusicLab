@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { FilePlus, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../../store';
 
 export default function FileManager() {
@@ -152,28 +153,31 @@ export default function FileManager() {
       {/* New button */}
       <button
         onClick={handleNew}
-        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors"
+        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
         title="Nueva composicion"
       >
-        Nuevo
+        <FilePlus size={14} />
+        <span>Nuevo</span>
       </button>
 
       {/* Import button */}
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors"
+        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
         title="Importar composicion (.json)"
       >
-        Abrir
+        <FolderOpen size={14} />
+        <span>Abrir</span>
       </button>
 
       {/* Export button */}
       <button
         onClick={handleExport}
-        className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors"
+        className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors flex items-center gap-1"
         title="Exportar composicion como JSON"
       >
-        Guardar
+        <Save size={14} />
+        <span>Guardar</span>
       </button>
     </div>
   );

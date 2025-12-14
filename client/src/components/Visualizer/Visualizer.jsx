@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { getAnalyser } from '../../strudel/engine';
 
 const MODES = [
@@ -642,9 +643,9 @@ export default function Visualizer({ isOpen, onClose }) {
           <span className="text-xs text-gray-500">ESC para cerrar</span>
           <button
             onClick={onClose}
-            className="px-3 py-1 text-sm bg-red-600/80 text-white rounded hover:bg-red-500 transition-colors"
+            className="p-1.5 bg-red-600/80 text-white rounded hover:bg-red-500 transition-colors"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       </div>

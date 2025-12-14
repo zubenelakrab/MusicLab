@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, BookOpen, Check } from 'lucide-react';
 
 const SECTIONS = [
   {
@@ -164,8 +165,11 @@ export default function CheatSheet() {
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-3 py-2 flex items-center justify-between bg-studio-700 hover:bg-studio-600 transition-colors"
       >
-        <span className="text-sm text-gray-400">Cheat Sheet</span>
-        <span className="text-gray-500">{isOpen ? '▼' : '▶'}</span>
+        <span className="text-sm text-gray-400 flex items-center gap-2">
+          <BookOpen size={14} />
+          Cheat Sheet
+        </span>
+        {isOpen ? <ChevronDown size={16} className="text-gray-500" /> : <ChevronRight size={16} className="text-gray-500" />}
       </button>
 
       {isOpen && (
@@ -187,8 +191,13 @@ export default function CheatSheet() {
                       <code className="text-xs text-accent-tertiary font-mono">
                         {item.pattern}
                       </code>
-                      <span className="text-xs text-gray-500 group-hover:text-gray-400">
-                        {copiedIndex === globalIdx ? '✓ Copiado' : item.desc}
+                      <span className="text-xs text-gray-500 group-hover:text-gray-400 flex items-center gap-1">
+                        {copiedIndex === globalIdx ? (
+                          <>
+                            <Check size={12} className="text-accent-primary" />
+                            Copiado
+                          </>
+                        ) : item.desc}
                       </span>
                     </div>
                   );

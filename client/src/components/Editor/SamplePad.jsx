@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Search } from 'lucide-react';
 import { useStore } from '../../store';
 import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES } from '../../data/samples';
 
@@ -203,13 +204,16 @@ export default function SamplePad() {
           </div>
         </div>
         {/* Search input */}
-        <input
-          type="text"
-          placeholder="Buscar sample..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-2 py-1 text-sm bg-studio-800 border border-studio-600 rounded text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
-        />
+        <div className="relative">
+          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Buscar sample..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-7 pr-2 py-1 text-sm bg-studio-800 border border-studio-600 rounded text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
+          />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-3">
