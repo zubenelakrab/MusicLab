@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Grid3X3 } from 'lucide-react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
 import CodeEditor from './components/Editor/CodeEditor';
@@ -8,11 +8,13 @@ import CheatSheet from './components/Editor/CheatSheet';
 import PatternList from './components/PatternManager/PatternList';
 import Timeline from './components/Sequencer/Timeline';
 import Visualizer from './components/Visualizer/Visualizer';
+import StepSequencer from './components/StepSequencer/StepSequencer';
 import { useStore } from './store';
 
 export default function App() {
   const { currentPattern } = useStore();
   const [showVisualizer, setShowVisualizer] = useState(false);
+  const [showSequencer, setShowSequencer] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-studio-900">
@@ -24,7 +26,15 @@ export default function App() {
           <div className="border-l border-studio-600 pl-4">
             <FileManager />
           </div>
-          <div className="border-l border-studio-600 pl-4">
+          <div className="border-l border-studio-600 pl-4 flex items-center gap-2">
+            <button
+              onClick={() => setShowSequencer(true)}
+              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors flex items-center gap-1.5"
+              title="Step Sequencer"
+            >
+              <Grid3X3 size={14} />
+              <span>Sequencer</span>
+            </button>
             <button
               onClick={() => setShowVisualizer(true)}
               className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1.5"
@@ -40,8 +50,9 @@ export default function App() {
         </span>
       </header>
 
-      {/* Visualizer Modal */}
+      {/* Modals */}
       <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
+      <StepSequencer isOpen={showSequencer} onClose={() => setShowSequencer(false)} />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar - Pattern Library */}
