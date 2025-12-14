@@ -5,56 +5,56 @@ const MODES = [
   { id: 'bars', name: 'Barras' },
   { id: 'wave', name: 'Onda' },
   { id: 'circle', name: 'Circular' },
-  { id: 'particles', name: 'Particulas' },
-  { id: 'milkdrop', name: 'Milkdrop' },
+  { id: 'starburst', name: 'Starburst' },
+  { id: 'tunnel', name: 'Tunel' },
+  { id: 'plasma', name: 'Plasma' },
 ];
 
 const COLORS = [
-  { id: 'matrix', name: 'Matrix', primary: '#00ff41', secondary: '#003b00', bg: '#000000' },
-  { id: 'fire', name: 'Fuego', primary: '#ff6600', secondary: '#ff0000', bg: '#1a0000' },
-  { id: 'ice', name: 'Hielo', primary: '#00ffff', secondary: '#0066ff', bg: '#000a14' },
-  { id: 'purple', name: 'Morado', primary: '#ff00ff', secondary: '#6600ff', bg: '#0d000d' },
-  { id: 'rainbow', name: 'Arcoiris', primary: 'rainbow', secondary: 'rainbow', bg: '#000000' },
-  { id: 'sunset', name: 'Atardecer', primary: '#ff7b00', secondary: '#ff006a', bg: '#1a0011' },
+  { id: 'neon', name: 'Neon', colors: ['#ff00ff', '#00ffff', '#ff0080', '#00ff80'], bg: '#0a0014' },
+  { id: 'fire', name: 'Fuego', colors: ['#ff0000', '#ff6600', '#ffcc00', '#ff3300'], bg: '#1a0500' },
+  { id: 'ocean', name: 'Oceano', colors: ['#0066ff', '#00ccff', '#0099cc', '#003366'], bg: '#000a14' },
+  { id: 'matrix', name: 'Matrix', colors: ['#00ff41', '#00cc33', '#009922', '#00ff00'], bg: '#000800' },
+  { id: 'sunset', name: 'Atardecer', colors: ['#ff006a', '#ff7b00', '#ffcc00', '#ff3366'], bg: '#1a0011' },
+  { id: 'cyber', name: 'Cyber', colors: ['#ff00ff', '#8800ff', '#0088ff', '#00ffff'], bg: '#05000a' },
 ];
 
 export default function Visualizer({ isOpen, onClose }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
-  const particlesRef = useRef([]);
-  const historyRef = useRef([]);
-  const milkdropRef = useRef({ time: 0, bass: 0, mid: 0, high: 0 });
+  const starsRef = useRef([]);
+  const tunnelRef = useRef({ rings: [], rotation: 0 });
+  const plasmaRef = useRef({ offset: 0 });
 
   const [mode, setMode] = useState('bars');
-  const [colorScheme, setColorScheme] = useState('matrix');
+  const [colorScheme, setColorScheme] = useState('neon');
   const [sensitivity, setSensitivity] = useState(2);
   const [hasAudio, setHasAudio] = useState(false);
 
-  const colors = COLORS.find(c => c.id === colorScheme) || COLORS[0];
+  const palette = COLORS.find(c => c.id === colorScheme) || COLORS[0];
 
-  const getColor = useCallback((value, index, total) => {
-    if (colors.primary === 'rainbow') {
-      const hue = (index / total) * 360;
-      return `hsl(${hue}, 100%, ${50 + value / 5}%)`;
+  // Get color from palette based on value/index
+  const getColor = useCallback((index, total, alpha = 1) => {
+    const colorIndex = Math.floor((index / total) * palette.colors.length);
+    const color = palette.colors[colorIndex % palette.colors.length];
+    if (alpha < 1) {
+      // Convert hex to rgba
+      const r = parseInt(color.slice(1, 3), 16);
+      const g = parseInt(color.slice(3, 5), 16);
+      const b = parseInt(color.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
-    return colors.primary;
-  }, [colors]);
+    return color;
+  }, [palette]);
 
-  const getGradient = useCallback((ctx, x, y, w, h, value, index, total) => {
-    if (colors.primary === 'rainbow') {
-      const hue = (index / total) * 360;
-      const gradient = ctx.createLinearGradient(x, y + h, x, y);
-      gradient.addColorStop(0, `hsl(${hue}, 100%, 30%)`);
-      gradient.addColorStop(0.5, `hsl(${hue}, 100%, 50%)`);
-      gradient.addColorStop(1, `hsl(${(hue + 30) % 360}, 100%, 70%)`);
-      return gradient;
-    }
-    const gradient = ctx.createLinearGradient(x, y + h, x, y);
-    gradient.addColorStop(0, colors.secondary);
-    gradient.addColorStop(0.5, colors.primary);
-    gradient.addColorStop(1, colors.primary + 'cc');
+  // Get gradient with palette colors
+  const createGradient = useCallback((ctx, x1, y1, x2, y2) => {
+    const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+    palette.colors.forEach((color, i) => {
+      gradient.addColorStop(i / (palette.colors.length - 1), color);
+    });
     return gradient;
-  }, [colors]);
+  }, [palette]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,27 +71,33 @@ export default function Visualizer({ isOpen, onClose }) {
     const ctx = canvas.getContext('2d');
     const analyser = getAnalyser();
 
-    // Setup buffers
     const bufferLength = analyser ? analyser.frequencyBinCount : 256;
     const dataArray = new Uint8Array(bufferLength);
     const waveArray = new Uint8Array(bufferLength);
 
-    // Initialize particles
-    if (particlesRef.current.length === 0) {
-      for (let i = 0; i < 150; i++) {
-        particlesRef.current.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          size: Math.random() * 3 + 1,
-          life: Math.random(),
-          hue: Math.random() * 360,
+    // Initialize stars for starburst
+    if (starsRef.current.length === 0) {
+      for (let i = 0; i < 200; i++) {
+        starsRef.current.push({
+          angle: Math.random() * Math.PI * 2,
+          speed: Math.random() * 2 + 0.5,
+          dist: Math.random() * 50,
+          size: Math.random() * 2 + 1,
+          colorIndex: Math.floor(Math.random() * 4),
         });
       }
     }
 
-    // Check if we have actual audio data
+    // Initialize tunnel rings
+    if (tunnelRef.current.rings.length === 0) {
+      for (let i = 0; i < 20; i++) {
+        tunnelRef.current.rings.push({
+          z: i * 50,
+          rotation: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
     const checkAudio = () => {
       if (analyser) {
         analyser.getByteFrequencyData(dataArray);
@@ -100,7 +106,6 @@ export default function Visualizer({ isOpen, onClose }) {
       }
     };
 
-    // Generate simulated data if no audio
     const simulateAudio = (time) => {
       for (let i = 0; i < bufferLength; i++) {
         const freq = i / bufferLength;
@@ -111,375 +116,394 @@ export default function Visualizer({ isOpen, onClose }) {
       }
     };
 
+    const getAudioLevels = () => {
+      const bass = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
+      const mid = dataArray.slice(10, 80).reduce((a, b) => a + b, 0) / 70 / 255;
+      const high = dataArray.slice(80, 150).reduce((a, b) => a + b, 0) / 70 / 255;
+      return { bass, mid, high };
+    };
+
+    // === BARS MODE ===
     const drawBars = (time) => {
-      if (analyser) {
-        analyser.getByteFrequencyData(dataArray);
-      }
-
-      // Check for audio activity
+      if (analyser) analyser.getByteFrequencyData(dataArray);
       const sum = dataArray.reduce((a, b) => a + b, 0);
-      if (sum < 100) {
-        simulateAudio(time);
-      }
+      if (sum < 100) simulateAudio(time);
 
-      ctx.fillStyle = colors.bg;
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const barCount = 64;
+      const { bass } = getAudioLevels();
+      const barCount = 80;
       const barWidth = canvas.width / barCount;
       const step = Math.floor(bufferLength / barCount);
 
-      for (let i = 0; i < barCount; i++) {
-        const dataIndex = i * step;
-        const value = dataArray[dataIndex] * sensitivity;
-        const barHeight = (value / 255) * canvas.height * 0.85;
+      // Mirror effect
+      for (let mirror = 0; mirror < 2; mirror++) {
+        for (let i = 0; i < barCount; i++) {
+          const dataIndex = i * step;
+          const value = dataArray[dataIndex] * sensitivity;
+          const barHeight = (value / 255) * canvas.height * 0.4;
 
-        const gradient = getGradient(ctx, i * barWidth, canvas.height - barHeight, barWidth, barHeight, value, i, barCount);
-        ctx.fillStyle = gradient;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = getColor(value, i, barCount);
+          const x = mirror === 0 ? i * barWidth : canvas.width - (i + 1) * barWidth;
+          const y = mirror === 0 ? canvas.height / 2 - barHeight : canvas.height / 2;
 
-        // Main bar with rounded top
-        const x = i * barWidth + 1;
-        const y = canvas.height - barHeight;
-        const w = barWidth - 2;
-        const h = barHeight;
-        const r = 3;
+          const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+          const color1 = getColor(i, barCount);
+          const color2 = getColor((i + barCount / 2) % barCount, barCount);
+          gradient.addColorStop(0, color1);
+          gradient.addColorStop(1, color2);
 
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h);
-        ctx.lineTo(x, y + h);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.fill();
+          ctx.fillStyle = gradient;
+          ctx.shadowBlur = 15 + bass * 20;
+          ctx.shadowColor = color1;
 
-        // Reflection
-        ctx.globalAlpha = 0.15;
-        ctx.fillRect(x, canvas.height, w, barHeight * 0.2);
-        ctx.globalAlpha = 1;
+          // Rounded bar
+          const w = barWidth - 2;
+          const h = barHeight;
+          const r = 2;
+          ctx.beginPath();
+          ctx.roundRect(x + 1, y, w, h, r);
+          ctx.fill();
+        }
       }
+
+      // Center glow
+      const centerGradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, 100 + bass * 100
+      );
+      centerGradient.addColorStop(0, getColor(0, 4, 0.3));
+      centerGradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = centerGradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       ctx.shadowBlur = 0;
     };
 
+    // === WAVE MODE ===
     const drawWave = (time) => {
-      if (analyser) {
-        analyser.getByteTimeDomainData(waveArray);
-      }
-
+      if (analyser) analyser.getByteTimeDomainData(waveArray);
       const sum = waveArray.reduce((a, b) => Math.abs(a - 128) + Math.abs(b - 128), 0);
       if (sum < 50) {
-        // Simulate wave
         for (let i = 0; i < bufferLength; i++) {
           waveArray[i] = 128 + Math.sin(time * 0.002 + i * 0.05) * 40;
         }
       }
 
-      ctx.fillStyle = colors.bg;
+      // Fade effect for trails
+      ctx.fillStyle = palette.bg + 'dd';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw multiple wave layers
-      for (let layer = 0; layer < 3; layer++) {
+      const layers = 5;
+      for (let layer = 0; layer < layers; layer++) {
         ctx.beginPath();
-        ctx.lineWidth = 3 - layer;
-        ctx.strokeStyle = colors.primary;
-        ctx.globalAlpha = 1 - layer * 0.3;
-        ctx.shadowBlur = 20 - layer * 5;
-        ctx.shadowColor = colors.primary;
+        ctx.lineWidth = 4 - layer * 0.5;
+        const color = getColor(layer, layers);
+        ctx.strokeStyle = color;
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = color;
 
         const sliceWidth = canvas.width / bufferLength;
-        let x = 0;
-        const offset = layer * 5;
+        const yOffset = (layer - layers / 2) * 20;
 
         for (let i = 0; i < bufferLength; i++) {
           const v = waveArray[i] / 128.0;
-          const y = (v * canvas.height) / 2 + Math.sin(time * 0.001 + layer) * offset;
+          const y = (v * canvas.height) / 2 + yOffset + Math.sin(time * 0.001 + layer * 0.5) * 10;
+          const x = i * sliceWidth;
 
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
-          x += sliceWidth;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
         }
-
         ctx.stroke();
       }
 
-      ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
-
-      // Fill underneath
-      ctx.globalAlpha = 0.1;
-      ctx.fillStyle = colors.primary;
-      ctx.lineTo(canvas.width, canvas.height);
-      ctx.lineTo(0, canvas.height);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 1;
     };
 
+    // === CIRCLE MODE ===
     const drawCircle = (time) => {
-      if (analyser) {
-        analyser.getByteFrequencyData(dataArray);
-      }
-
+      if (analyser) analyser.getByteFrequencyData(dataArray);
       const sum = dataArray.reduce((a, b) => a + b, 0);
-      if (sum < 100) {
-        simulateAudio(time);
-      }
+      if (sum < 100) simulateAudio(time);
 
-      ctx.fillStyle = colors.bg + 'ee';
+      ctx.fillStyle = palette.bg + 'f0';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      const { bass, mid, high } = getAudioLevels();
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
-      const baseRadius = Math.min(canvas.width, canvas.height) * 0.25;
+      const baseRadius = Math.min(canvas.width, canvas.height) * 0.2;
 
-      // Get audio levels
-      const bass = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
-      const mid = dataArray.slice(10, 100).reduce((a, b) => a + b, 0) / 90 / 255;
-
-      // Outer rotating rings
-      for (let ring = 0; ring < 3; ring++) {
-        const ringRadius = baseRadius * (1.3 + ring * 0.2) + bass * 20;
+      // Rotating outer circles
+      for (let ring = 0; ring < 4; ring++) {
+        const ringRadius = baseRadius * (1.5 + ring * 0.3) + bass * 30;
         ctx.beginPath();
         ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = colors.primary;
-        ctx.globalAlpha = 0.2 - ring * 0.05;
+        ctx.strokeStyle = getColor(ring, 4, 0.3);
         ctx.lineWidth = 2;
         ctx.stroke();
       }
-      ctx.globalAlpha = 1;
 
-      // Circular bars
-      const bars = 128;
+      // Circular spectrum
+      const bars = 120;
       for (let i = 0; i < bars; i++) {
         const dataIndex = Math.floor((i / bars) * bufferLength);
         const value = dataArray[dataIndex] * sensitivity;
-        const barHeight = (value / 255) * baseRadius * 0.6;
+        const barHeight = (value / 255) * baseRadius * 0.8;
 
-        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2 + time * 0.0003;
-        const radius = baseRadius + bass * 15;
-        const x1 = centerX + Math.cos(angle) * radius;
-        const y1 = centerY + Math.sin(angle) * radius;
-        const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-        const y2 = centerY + Math.sin(angle) * (radius + barHeight);
+        const angle = (i / bars) * Math.PI * 2 - Math.PI / 2 + time * 0.0005;
+        const innerRadius = baseRadius + bass * 20;
+
+        const x1 = centerX + Math.cos(angle) * innerRadius;
+        const y1 = centerY + Math.sin(angle) * innerRadius;
+        const x2 = centerX + Math.cos(angle) * (innerRadius + barHeight);
+        const y2 = centerY + Math.sin(angle) * (innerRadius + barHeight);
 
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
-        ctx.strokeStyle = getColor(value, i, bars);
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 5;
-        ctx.shadowColor = getColor(value, i, bars);
+
+        const color = getColor(i, bars);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = color;
         ctx.stroke();
       }
 
-      // Inner pulsing circle
-      const pulseRadius = baseRadius * 0.4 + bass * baseRadius * 0.2;
-      const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseRadius);
-      gradient.addColorStop(0, colors.primary);
-      gradient.addColorStop(0.5, colors.primary + '88');
-      gradient.addColorStop(1, colors.primary + '00');
+      // Inner pulsing core
+      const pulseRadius = baseRadius * 0.5 + bass * 30;
+      const coreGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseRadius);
+      coreGradient.addColorStop(0, getColor(0, 4));
+      coreGradient.addColorStop(0.5, getColor(1, 4, 0.6));
+      coreGradient.addColorStop(1, 'transparent');
 
       ctx.beginPath();
       ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
-      ctx.fillStyle = gradient;
-      ctx.shadowBlur = 30;
-      ctx.shadowColor = colors.primary;
+      ctx.fillStyle = coreGradient;
+      ctx.shadowBlur = 40;
+      ctx.shadowColor = getColor(0, 4);
       ctx.fill();
+
       ctx.shadowBlur = 0;
     };
 
-    const drawParticles = (time) => {
-      if (analyser) {
-        analyser.getByteFrequencyData(dataArray);
-      }
-
+    // === STARBURST MODE ===
+    const drawStarburst = (time) => {
+      if (analyser) analyser.getByteFrequencyData(dataArray);
       const sum = dataArray.reduce((a, b) => a + b, 0);
-      if (sum < 100) {
-        simulateAudio(time);
-      }
+      if (sum < 100) simulateAudio(time);
 
-      ctx.fillStyle = colors.bg + '15';
+      // Fade trails
+      ctx.fillStyle = palette.bg + '18';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const bass = dataArray.slice(0, 5).reduce((a, b) => a + b, 0) / 5 / 255;
-      const mid = dataArray.slice(5, 50).reduce((a, b) => a + b, 0) / 45 / 255;
-      const high = dataArray.slice(50, 100).reduce((a, b) => a + b, 0) / 50 / 255;
+      const { bass, mid, high } = getAudioLevels();
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const maxDist = Math.max(canvas.width, canvas.height) * 0.7;
 
-      particlesRef.current.forEach((p, i) => {
-        // Update particle
-        const speedMult = sensitivity * (1 + bass * 2);
-        p.x += p.vx * speedMult;
-        p.y += p.vy * speedMult;
-        p.life -= 0.003;
-        p.hue = (p.hue + high * 5) % 360;
+      // Update and draw stars
+      starsRef.current.forEach((star, i) => {
+        const speedBoost = 1 + bass * 3 + (i % 3 === 0 ? high * 2 : 0);
+        star.dist += star.speed * speedBoost * sensitivity;
 
-        // Attract to center on bass
-        if (bass > 0.5) {
-          const dx = canvas.width / 2 - p.x;
-          const dy = canvas.height / 2 - p.y;
-          p.vx += dx * 0.0001 * bass;
-          p.vy += dy * 0.0001 * bass;
+        if (star.dist > maxDist) {
+          star.dist = 0;
+          star.angle = Math.random() * Math.PI * 2;
+          star.speed = Math.random() * 2 + 0.5;
+          star.colorIndex = Math.floor(Math.random() * 4);
         }
 
-        // Bounce off walls
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -0.9;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -0.9;
+        const x = centerX + Math.cos(star.angle) * star.dist;
+        const y = centerY + Math.sin(star.angle) * star.dist;
+        const size = star.size * (1 + star.dist / maxDist * 3) * (1 + bass);
 
-        // Reset dead particles
-        if (p.life <= 0) {
-          p.x = canvas.width / 2 + (Math.random() - 0.5) * 100;
-          p.y = canvas.height / 2 + (Math.random() - 0.5) * 100;
-          p.vx = (Math.random() - 0.5) * 4;
-          p.vy = (Math.random() - 0.5) * 4;
-          p.life = 1;
-          p.size = Math.random() * 3 + 1 + bass * 5;
-        }
-
-        // Draw particle
-        const size = p.size * (1 + mid * 2);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.arc(x, y, size, 0, Math.PI * 2);
 
-        if (colors.primary === 'rainbow') {
-          ctx.fillStyle = `hsla(${p.hue}, 100%, ${50 + p.life * 30}%, ${p.life})`;
-        } else {
-          ctx.fillStyle = colors.primary;
-          ctx.globalAlpha = p.life;
-        }
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = ctx.fillStyle;
+        const alpha = Math.min(1, star.dist / 100);
+        const color = getColor(star.colorIndex, 4, alpha);
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 10 + mid * 20;
+        ctx.shadowColor = palette.colors[star.colorIndex];
         ctx.fill();
-        ctx.globalAlpha = 1;
+
+        // Trail line
+        if (star.dist > 20) {
+          const trailLength = Math.min(star.dist * 0.3, 50);
+          const x2 = centerX + Math.cos(star.angle) * (star.dist - trailLength);
+          const y2 = centerY + Math.sin(star.angle) * (star.dist - trailLength);
+
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = getColor(star.colorIndex, 4, alpha * 0.5);
+          ctx.lineWidth = size * 0.5;
+          ctx.stroke();
+        }
       });
 
-      // Connect nearby particles
+      // Center burst on heavy bass
+      if (bass > 0.6) {
+        const burstGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 150 * bass);
+        burstGradient.addColorStop(0, getColor(0, 4, 0.8));
+        burstGradient.addColorStop(0.5, getColor(1, 4, 0.3));
+        burstGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = burstGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
       ctx.shadowBlur = 0;
-      ctx.lineWidth = 0.5;
-      particlesRef.current.forEach((p1, i) => {
-        particlesRef.current.slice(i + 1, i + 10).forEach(p2 => {
-          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-          if (dist < 100) {
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = colors.primary;
-            ctx.globalAlpha = (1 - dist / 100) * 0.3;
-            ctx.stroke();
-          }
-        });
-      });
-      ctx.globalAlpha = 1;
     };
 
-    const drawMilkdrop = (time) => {
-      if (analyser) {
-        analyser.getByteFrequencyData(dataArray);
-      }
-
+    // === TUNNEL MODE ===
+    const drawTunnel = (time) => {
+      if (analyser) analyser.getByteFrequencyData(dataArray);
       const sum = dataArray.reduce((a, b) => a + b, 0);
-      if (sum < 100) {
-        simulateAudio(time);
-      }
+      if (sum < 100) simulateAudio(time);
 
-      const md = milkdropRef.current;
-      md.time = time;
-      md.bass = dataArray.slice(0, 5).reduce((a, b) => a + b, 0) / 5 / 255;
-      md.mid = dataArray.slice(5, 50).reduce((a, b) => a + b, 0) / 45 / 255;
-      md.high = dataArray.slice(50, 100).reduce((a, b) => a + b, 0) / 50 / 255;
-
-      // Fade effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = palette.bg;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      const { bass, mid, high } = getAudioLevels();
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
 
-      // Psychedelic spirals
-      const spirals = 6;
-      for (let s = 0; s < spirals; s++) {
-        ctx.beginPath();
-        const spiralOffset = (s / spirals) * Math.PI * 2;
+      tunnelRef.current.rotation += 0.01 + bass * 0.05;
 
-        for (let i = 0; i < 200; i++) {
-          const t = i / 200;
-          const angle = t * Math.PI * 8 + time * 0.001 + spiralOffset + md.bass * 2;
-          const radius = t * Math.min(canvas.width, canvas.height) * 0.5 * (1 + md.mid * 0.3);
-          const wobble = Math.sin(t * 20 + time * 0.003) * 20 * md.high;
+      // Update rings
+      tunnelRef.current.rings.forEach((ring, i) => {
+        ring.z -= 5 + bass * 15;
+        if (ring.z < 10) {
+          ring.z = 1000;
+          ring.rotation = Math.random() * Math.PI * 2;
+        }
+      });
 
-          const x = centerX + Math.cos(angle) * (radius + wobble);
-          const y = centerY + Math.sin(angle) * (radius + wobble);
+      // Sort by z (far to near)
+      const sortedRings = [...tunnelRef.current.rings].sort((a, b) => b.z - a.z);
 
-          if (i === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+      sortedRings.forEach((ring, i) => {
+        const scale = 500 / ring.z;
+        const radius = 300 * scale;
+        const segments = 8;
+
+        const dataIndex = Math.floor((i / sortedRings.length) * bufferLength);
+        const audioValue = dataArray[dataIndex] / 255;
+        const wobble = audioValue * 30 * scale;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(ring.rotation + tunnelRef.current.rotation);
+
+        for (let s = 0; s < segments; s++) {
+          const angle1 = (s / segments) * Math.PI * 2;
+          const angle2 = ((s + 1) / segments) * Math.PI * 2;
+
+          const r1 = radius + Math.sin(angle1 * 3 + time * 0.003) * wobble;
+          const r2 = radius + Math.sin(angle2 * 3 + time * 0.003) * wobble;
+
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(angle1) * r1, Math.sin(angle1) * r1);
+          ctx.lineTo(Math.cos(angle2) * r2, Math.sin(angle2) * r2);
+
+          const alpha = Math.min(1, scale * 2);
+          ctx.strokeStyle = getColor(s, segments, alpha);
+          ctx.lineWidth = 3 * scale;
+          ctx.shadowBlur = 15 * scale;
+          ctx.shadowColor = palette.colors[s % 4];
+          ctx.stroke();
         }
 
-        const hue = (s / spirals) * 360 + time * 0.05;
-        ctx.strokeStyle = colors.primary === 'rainbow'
-          ? `hsla(${hue}, 100%, 50%, 0.5)`
-          : colors.primary + '80';
-        ctx.lineWidth = 2 + md.bass * 3;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = ctx.strokeStyle;
-        ctx.stroke();
-      }
-
-      // Center burst on beat
-      if (md.bass > 0.6) {
-        const burstRadius = md.bass * 200;
-        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, burstRadius);
-        gradient.addColorStop(0, colors.primary + 'ff');
-        gradient.addColorStop(0.5, colors.primary + '44');
-        gradient.addColorStop(1, colors.primary + '00');
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, burstRadius, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
-      }
+        ctx.restore();
+      });
 
       ctx.shadowBlur = 0;
     };
 
-    let lastTime = 0;
+    // === PLASMA MODE ===
+    const drawPlasma = (time) => {
+      if (analyser) analyser.getByteFrequencyData(dataArray);
+      const sum = dataArray.reduce((a, b) => a + b, 0);
+      if (sum < 100) simulateAudio(time);
+
+      const { bass, mid, high } = getAudioLevels();
+      const imageData = ctx.createImageData(canvas.width, canvas.height);
+      const data = imageData.data;
+
+      plasmaRef.current.offset += 0.02 + bass * 0.1;
+      const t = plasmaRef.current.offset;
+
+      const cellSize = 4; // Lower resolution for performance
+
+      for (let y = 0; y < canvas.height; y += cellSize) {
+        for (let x = 0; x < canvas.width; x += cellSize) {
+          const nx = x / canvas.width;
+          const ny = y / canvas.height;
+
+          // Plasma formula
+          let v = Math.sin(nx * 10 + t);
+          v += Math.sin((ny * 10 + t) / 2);
+          v += Math.sin((nx * 10 + ny * 10 + t) / 2);
+          v += Math.sin(Math.sqrt(nx * nx * 100 + ny * ny * 100) + t);
+
+          // Add audio reactivity
+          v += bass * Math.sin(nx * 20 + t * 2);
+          v += mid * Math.cos(ny * 15 + t * 1.5);
+
+          v = (v + 4) / 8; // Normalize to 0-1
+
+          // Map to palette colors
+          const colorIndex = Math.floor(v * palette.colors.length) % palette.colors.length;
+          const color = palette.colors[colorIndex];
+          const r = parseInt(color.slice(1, 3), 16);
+          const g = parseInt(color.slice(3, 5), 16);
+          const b = parseInt(color.slice(5, 7), 16);
+
+          // Fill cell
+          for (let dy = 0; dy < cellSize && y + dy < canvas.height; dy++) {
+            for (let dx = 0; dx < cellSize && x + dx < canvas.width; dx++) {
+              const idx = ((y + dy) * canvas.width + (x + dx)) * 4;
+              data[idx] = r;
+              data[idx + 1] = g;
+              data[idx + 2] = b;
+              data[idx + 3] = 255;
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      // Overlay vignette
+      const vignette = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.height * 0.3,
+        canvas.width / 2, canvas.height / 2, canvas.height * 0.8
+      );
+      vignette.addColorStop(0, 'transparent');
+      vignette.addColorStop(1, palette.bg);
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
     const draw = (timestamp) => {
       const time = timestamp || 0;
 
       switch (mode) {
-        case 'bars':
-          drawBars(time);
-          break;
-        case 'wave':
-          drawWave(time);
-          break;
-        case 'circle':
-          drawCircle(time);
-          break;
-        case 'particles':
-          drawParticles(time);
-          break;
-        case 'milkdrop':
-          drawMilkdrop(time);
-          break;
-        default:
-          drawBars(time);
+        case 'bars': drawBars(time); break;
+        case 'wave': drawWave(time); break;
+        case 'circle': drawCircle(time); break;
+        case 'starburst': drawStarburst(time); break;
+        case 'tunnel': drawTunnel(time); break;
+        case 'plasma': drawPlasma(time); break;
+        default: drawBars(time);
       }
 
       animationRef.current = requestAnimationFrame(draw);
     };
 
-    // Start the animation
     draw(0);
-
-    // Check audio periodically
     const audioCheck = setInterval(checkAudio, 1000);
 
     return () => {
@@ -489,7 +513,7 @@ export default function Visualizer({ isOpen, onClose }) {
       }
       clearInterval(audioCheck);
     };
-  }, [isOpen, mode, colorScheme, sensitivity, colors, getColor, getGradient]);
+  }, [isOpen, mode, colorScheme, sensitivity, palette, getColor, createGradient]);
 
   // Resize canvas
   useEffect(() => {
@@ -509,9 +533,7 @@ export default function Visualizer({ isOpen, onClose }) {
   // Handle ESC key
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+      if (e.key === 'Escape' && isOpen) onClose();
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
@@ -522,7 +544,7 @@ export default function Visualizer({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       {/* Controls */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black/80 backdrop-blur border-b border-gray-800">
+      <div className="flex items-center justify-between px-4 py-2 bg-black/90 backdrop-blur border-b border-gray-800">
         <div className="flex items-center gap-4">
           <span className="text-sm text-purple-400 font-bold tracking-wider">VISUALIZER</span>
 
@@ -553,9 +575,7 @@ export default function Visualizer({ isOpen, onClose }) {
                   colorScheme === c.id ? 'border-white scale-110' : 'border-transparent hover:border-gray-500'
                 }`}
                 style={{
-                  background: c.primary === 'rainbow'
-                    ? 'linear-gradient(135deg, red, orange, yellow, green, blue, purple)'
-                    : c.primary
+                  background: `linear-gradient(135deg, ${c.colors[0]}, ${c.colors[1]}, ${c.colors[2]})`
                 }}
                 title={c.name}
               />
@@ -579,8 +599,8 @@ export default function Visualizer({ isOpen, onClose }) {
 
         <div className="flex items-center gap-3">
           {!hasAudio && (
-            <span className="text-xs text-yellow-500">
-              Demo mode - Play audio to sync
+            <span className="text-xs text-yellow-500 animate-pulse">
+              Demo mode - Dale Play para sincronizar
             </span>
           )}
           <span className="text-xs text-gray-500">ESC para cerrar</span>
@@ -595,10 +615,7 @@ export default function Visualizer({ isOpen, onClose }) {
 
       {/* Canvas */}
       <div className="flex-1 overflow-hidden bg-black">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-        />
+        <canvas ref={canvasRef} className="w-full h-full" />
       </div>
     </div>
   );
