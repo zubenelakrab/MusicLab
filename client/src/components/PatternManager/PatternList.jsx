@@ -6,6 +6,16 @@ import logger from '../../utils/logger';
 
 const API_URL = '/api/patterns';
 
+// Generate unique IDs
+const generateTrackId = () => `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateClipId = () => `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// Default track colors
+const TRACK_COLORS = [
+  '#00d4aa', '#ff6b6b', '#4ecdc4', '#f7dc6f', '#bb8fce',
+  '#85c1e9', '#f8b500', '#e74c3c', '#2ecc71', '#9b59b6',
+];
+
 export default function PatternList() {
   const {
     patterns,
@@ -13,8 +23,8 @@ export default function PatternList() {
     currentPattern,
     setCurrentPattern,
     addPattern,
-    addLayer,
-    selectedLayerIndex,
+    arrangement,
+    setEditingClip,
   } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,9 +77,65 @@ export default function PatternList() {
     }
   };
 
-  // Add pattern as a new layer (doesn't replace existing work)
-  const handleAddAsLayer = (pattern) => {
-    addLayer(pattern.code, pattern.name);
+  // Add pattern as a new track with a clip
+  const handleAddAsTrack = (pattern) => {
+    const trackCount = arrangement.tracks.length;
+    const color = TRACK_COLORS[trackCount % TRACK_COLORS.length];
+    const trackId = generateTrackId();
+    const clipId = generateClipId();
+
+    // Create new track with a clip containing the pattern code
+    const newTrack = {
+      id: trackId,
+      name: pattern.name,
+      color,
+      muted: false,
+      solo: false,
+      height: 80,
+      params: {
+        gain: 0.8,
+        cutoff: 8000,
+        resonance: 0,
+        speed: 1,
+        pan: 0,
+        reverb: 0,
+        reverbSize: 2,
+        delay: 0,
+        delayTime: 0.25,
+        delayFeedback: 0.3,
+        distortion: 0,
+        hpf: 0,
+        phaser: 0,
+        phaserDepth: 0.5,
+      },
+      clips: [{
+        id: clipId,
+        patternId: pattern.id,
+        name: pattern.name,
+        startBar: 0,
+        durationBars: 4,
+        color,
+        layers: [{
+          id: `layer-${Date.now()}`,
+          name: pattern.name,
+          code: pattern.code,
+          muted: false,
+          solo: false,
+          params: pattern.params || {},
+        }],
+      }],
+    };
+
+    // Update arrangement with new track
+    useStore.setState((state) => ({
+      arrangement: {
+        ...state.arrangement,
+        tracks: [...state.arrangement.tracks, newTrack],
+      },
+    }));
+
+    // Select the new clip for editing
+    setEditingClip(trackId, clipId);
   };
 
   // Replace everything with this pattern (loads it as a new project)
@@ -111,7 +177,7 @@ export default function PatternList() {
             <PatternCard
               key={pattern.id}
               pattern={pattern}
-              onAddAsLayer={handleAddAsLayer}
+              onAddAsTrack={handleAddAsTrack}
               onReplace={handleReplace}
               onDelete={handleDelete}
               isActive={currentPattern.id === pattern.id}
@@ -122,7 +188,7 @@ export default function PatternList() {
 
       <div className="px-3 py-2 bg-studio-700 border-t border-studio-600">
         <p className="text-xs text-gray-500">
-          "+ Agregar capa" agrega sin borrar
+          "+ Track" agrega un nuevo track
         </p>
       </div>
     </div>

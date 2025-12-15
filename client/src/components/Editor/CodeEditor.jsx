@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { EditorView, keymap } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 import { basicSetup } from 'codemirror';
@@ -45,25 +45,37 @@ export default function CodeEditor() {
   const callbackRef = useRef(null);
 
   const {
-    currentPattern,
-    selectedLayerIndex,
-    updateLayerCode,
+    editingClip,
+    arrangement,
+    updateEditingClipCode,
   } = useStore();
 
   const { isPlaying } = useStrudel();
 
-  // Get the current layer
-  const currentLayer = currentPattern.layers?.[selectedLayerIndex];
-  const currentCode = currentLayer?.code || '';
+  // Get the current clip being edited
+  const currentClipData = useMemo(() => {
+    if (!editingClip) return null;
+    const { trackId, clipId } = editingClip;
+    const track = arrangement.tracks.find(t => t.id === trackId);
+    if (!track) return null;
+    const clip = track.clips.find(c => c.id === clipId);
+    if (!clip) return null;
+    return { track, clip, code: clip.layers?.[0]?.code || '' };
+  }, [editingClip, arrangement]);
+
+  const currentCode = currentClipData?.code || '';
+  const hasClip = !!currentClipData;
 
   // Keep callback ref updated
   callbackRef.current = (value) => {
-    updateLayerCode(selectedLayerIndex, value);
+    if (editingClip) {
+      updateEditingClipCode(value);
+    }
   };
 
   // Create editor once
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorRef.current || viewRef.current) return;
 
     const updateListener = EditorView.updateListener.of((update) => {
       if (update.docChanged && callbackRef.current) {
@@ -121,9 +133,9 @@ export default function CodeEditor() {
     };
   }, []);
 
-  // Sync code when layer or code changes
+  // Sync code when editing clip changes
   useEffect(() => {
-    if (viewRef.current) {
+    if (viewRef.current && hasClip) {
       const currentDoc = viewRef.current.state.doc.toString();
       if (currentDoc !== currentCode) {
         viewRef.current.dispatch({
@@ -135,19 +147,50 @@ export default function CodeEditor() {
         });
       }
     }
-  }, [currentCode, selectedLayerIndex]);
+  }, [currentCode, editingClip?.clipId, hasClip]);
 
   return (
     <div className="flex flex-col h-full">
+      {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
-        <span className="text-sm text-gray-400">
-          Capa: <span className="text-accent-primary">{currentLayer?.name || 'Layer'}</span>
-        </span>
+        {hasClip ? (
+          <div className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded"
+              style={{ backgroundColor: currentClipData.track.color }}
+            />
+            <span className="text-sm text-gray-400">
+              <span className="text-white">{currentClipData.track.name}</span>
+              <span className="mx-1">/</span>
+              <span className="text-accent-primary">{currentClipData.clip.name}</span>
+            </span>
+          </div>
+        ) : (
+          <span className="text-sm text-gray-400">Editor</span>
+        )}
         <span className="text-xs text-gray-500">
           {isPlaying ? 'En vivo' : 'Tab para autocompletar'}
         </span>
       </div>
-      <div ref={editorRef} className="flex-1 overflow-hidden" />
+
+      {/* Editor container - always mounted */}
+      <div className="flex-1 overflow-hidden relative">
+        <div
+          ref={editorRef}
+          className="absolute inset-0"
+          style={{ display: hasClip ? 'block' : 'none' }}
+        />
+
+        {/* Placeholder when no clip selected */}
+        {!hasClip && (
+          <div className="absolute inset-0 flex items-center justify-center bg-studio-900">
+            <div className="text-center text-gray-500">
+              <p className="text-sm">Selecciona un clip para editar</p>
+              <p className="text-xs mt-1">Click en un clip del timeline</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

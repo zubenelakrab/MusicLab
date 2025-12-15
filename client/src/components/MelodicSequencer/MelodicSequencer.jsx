@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Play, Square, Copy, Trash2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Play, Square, Copy, Trash2, RotateCcw, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 import { initAudio, startMelodicPreview, stopPreview } from '../../strudel/engine';
@@ -119,8 +119,18 @@ const PRESETS = [
 
 const STEP_OPTIONS = [8, 16, 32];
 
+// Generate unique IDs
+const generateTrackId = () => `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateClipId = () => `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// Track colors
+const TRACK_COLORS = [
+  '#00d4aa', '#ff6b6b', '#4ecdc4', '#f7dc6f', '#bb8fce',
+  '#85c1e9', '#f8b500', '#e74c3c', '#2ecc71', '#9b59b6',
+];
+
 export default function MelodicSequencer({ isOpen, onClose }) {
-  const { updateLayerCode, selectedLayerIndex, bpm } = useStore();
+  const { arrangement, setEditingClip, bpm } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
   const [steps, setSteps] = useState(16);
@@ -252,14 +262,64 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     setGrid(newGrid);
   };
 
-  // Apply to layer
-  const applyToLayer = () => {
+  // Create new track with the generated melodic pattern
+  const applyAsTrack = () => {
     if (isPreviewPlaying) {
       stopPreview();
       setIsPreviewPlaying(false);
     }
     const code = generateCode();
-    updateLayerCode(selectedLayerIndex, code);
+    if (!code || code === '~') {
+      onClose();
+      return;
+    }
+
+    const trackCount = arrangement.tracks.length;
+    const color = TRACK_COLORS[trackCount % TRACK_COLORS.length];
+    const trackId = generateTrackId();
+    const clipId = generateClipId();
+
+    // Create new track with a clip containing the melodic pattern
+    const newTrack = {
+      id: trackId,
+      name: 'Melody',
+      color,
+      muted: false,
+      solo: false,
+      height: 80,
+      params: {
+        gain: 0.8, cutoff: 8000, resonance: 0, speed: 1, pan: 0,
+        reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,
+        distortion: 0, hpf: 0, phaser: 0, phaserDepth: 0.5,
+      },
+      clips: [{
+        id: clipId,
+        patternId: null,
+        name: 'Melodic Pattern',
+        startBar: 0,
+        durationBars: 4,
+        color,
+        layers: [{
+          id: `layer-${Date.now()}`,
+          name: 'Melody',
+          code,
+          muted: false,
+          solo: false,
+          params: {},
+        }],
+      }],
+    };
+
+    // Add track to arrangement
+    useStore.setState((state) => ({
+      arrangement: {
+        ...state.arrangement,
+        tracks: [...state.arrangement.tracks, newTrack],
+      },
+    }));
+
+    // Select the new clip for editing
+    setEditingClip(trackId, clipId);
     onClose();
   };
 
@@ -558,11 +618,11 @@ export default function MelodicSequencer({ isOpen, onClose }) {
               </div>
             </div>
             <button
-              onClick={applyToLayer}
+              onClick={applyAsTrack}
               className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 flex items-center gap-2"
             >
-              <Play size={16} />
-              Aplicar a Layer {selectedLayerIndex + 1}
+              <Plus size={16} />
+              Crear Track
             </button>
           </div>
         </div>

@@ -9,13 +9,14 @@ export function useStrudel() {
   const {
     isPlaying,
     bpm,
-    currentPattern,
+    arrangement,
+    patterns,
     setPlaying,
-    getActiveLayers,
+    setPlayheadPosition,
   } = useStore();
 
-  // Track layers for change detection
-  const lastLayersRef = useRef(JSON.stringify(currentPattern.layers));
+  // Track arrangement for change detection
+  const lastArrangementRef = useRef(JSON.stringify(arrangement));
 
   const initializeAudio = useCallback(async () => {
     try {
@@ -32,6 +33,26 @@ export function useStrudel() {
     }
   }, []);
 
+  // Check if arrangement has any clips with code
+  const hasClipsToPlay = useCallback(() => {
+    const hasSolo = arrangement.tracks.some(t => t.solo);
+
+    for (const track of arrangement.tracks) {
+      if (track.muted) continue;
+      if (hasSolo && !track.solo) continue;
+
+      for (const clip of track.clips) {
+        if (clip.layers && clip.layers.length > 0) {
+          const clipCode = clip.layers[0]?.code;
+          if (clipCode && clipCode.trim()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }, [arrangement]);
+
   const play = useCallback(async () => {
     setError(null);
 
@@ -43,9 +64,17 @@ export function useStrudel() {
       }
     }
 
-    // Use layers API
-    const layers = currentPattern.layers;
-    const result = await engine.evaluateLayers(layers, bpm);
+    // Check if there are clips to play
+    if (!hasClipsToPlay()) {
+      setError('No clips to play. Add clips to tracks.');
+      return;
+    }
+
+    // Reset playhead to start
+    setPlayheadPosition(0);
+
+    // Use arrangement-aware evaluation with time masking
+    const result = await engine.evaluateArrangement(arrangement, patterns, bpm);
 
     if (result.success) {
       engine.start();
@@ -53,12 +82,14 @@ export function useStrudel() {
     } else {
       setError(result.error);
     }
-  }, [audioReady, initializeAudio, currentPattern.layers, bpm, setPlaying]);
+  }, [audioReady, initializeAudio, hasClipsToPlay, arrangement, patterns, bpm, setPlaying, setPlayheadPosition]);
 
   const stop = useCallback(() => {
     engine.stop();
     setPlaying(false);
-  }, [setPlaying]);
+    // Reset playhead when stopping
+    setPlayheadPosition(0);
+  }, [setPlaying, setPlayheadPosition]);
 
   const toggle = useCallback(() => {
     if (isPlaying) {
@@ -68,18 +99,17 @@ export function useStrudel() {
     }
   }, [isPlaying, play, stop]);
 
-  // Legacy: update code for selected layer
-  const updateCode = useCallback(async (code) => {
-    if (isPlaying) {
-      const layers = currentPattern.layers;
-      const result = await engine.evaluateLayers(layers, bpm);
+  // Legacy: update code (for compatibility)
+  const updateCode = useCallback(async () => {
+    if (isPlaying && hasClipsToPlay()) {
+      const result = await engine.evaluateArrangement(arrangement, patterns, bpm);
       if (!result.success) {
         setError(result.error);
       } else {
         setError(null);
       }
     }
-  }, [isPlaying, bpm, currentPattern.layers]);
+  }, [isPlaying, bpm, arrangement, patterns, hasClipsToPlay]);
 
   // Sync tempo changes
   useEffect(() => {
@@ -88,21 +118,54 @@ export function useStrudel() {
     }
   }, [bpm, audioReady]);
 
-  // Sync layer changes in real-time (code, params, mute, solo)
-  useEffect(() => {
-    const layersJson = JSON.stringify(currentPattern.layers);
+  // Track loop state for detecting changes
+  const lastLoopEnabledRef = useRef(arrangement.loopEnabled);
 
-    if (audioReady && isPlaying && layersJson !== lastLayersRef.current) {
-      lastLayersRef.current = layersJson;
-      engine.evaluateLayers(currentPattern.layers, bpm).then(result => {
-        if (!result.success) {
-          setError(result.error);
-        } else {
-          setError(null);
-        }
-      });
+  // Handle loop toggle - restart playback from 0
+  useEffect(() => {
+    if (audioReady && isPlaying && arrangement.loopEnabled !== lastLoopEnabledRef.current) {
+      lastLoopEnabledRef.current = arrangement.loopEnabled;
+
+      // Stop, reset, and restart playback
+      engine.stop();
+      engine.resetPlaybackTime();
+      setPlayheadPosition(0);
+
+      if (hasClipsToPlay()) {
+        engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
+          if (result.success) {
+            engine.start();
+            setError(null);
+          } else {
+            setError(result.error);
+          }
+        });
+      }
     }
-  }, [currentPattern.layers, audioReady, isPlaying, bpm]);
+  }, [arrangement.loopEnabled, audioReady, isPlaying, arrangement, patterns, bpm, hasClipsToPlay, setPlayheadPosition]);
+
+  // Sync other arrangement changes in real-time (excluding loop toggle)
+  useEffect(() => {
+    const arrangementJson = JSON.stringify(arrangement);
+
+    if (audioReady && isPlaying && arrangementJson !== lastArrangementRef.current) {
+      // Skip if this was triggered by loop change (handled above)
+      if (arrangement.loopEnabled === lastLoopEnabledRef.current) {
+        lastArrangementRef.current = arrangementJson;
+
+        if (hasClipsToPlay()) {
+          engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
+            if (!result.success) {
+              setError(result.error);
+            } else {
+              setError(null);
+            }
+          });
+        }
+      }
+      lastArrangementRef.current = arrangementJson;
+    }
+  }, [arrangement, patterns, audioReady, isPlaying, bpm, hasClipsToPlay]);
 
   // Cleanup on unmount
   useEffect(() => {

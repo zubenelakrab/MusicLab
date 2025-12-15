@@ -313,6 +313,7 @@ export async function evaluateLayers(layers, bpm = 120) {
 
     currentLayers = layers;
     const cps = bpm / 60 / 4;
+    currentCps = cps;
     const { scheduler } = repl;
     scheduler.setCps(cps);
 
@@ -333,6 +334,13 @@ export function start() {
   if (repl) {
     const { scheduler } = repl;
     scheduler.start();
+
+    // Record start time for playhead tracking
+    const ctx = getAudioContext();
+    if (ctx) {
+      playbackStartTime = ctx.currentTime;
+    }
+
     logger.log('Started');
   }
 }
@@ -341,6 +349,7 @@ export function stop() {
   if (repl) {
     const { scheduler } = repl;
     scheduler.stop();
+    playbackStartTime = 0;
     logger.log('Stopped');
   }
 }
@@ -349,6 +358,7 @@ export function setTempo(bpm) {
   if (repl) {
     const { scheduler } = repl;
     const cps = bpm / 60 / 4;
+    currentCps = cps;
     scheduler.setCps(cps);
   }
 }
@@ -785,6 +795,247 @@ export async function previewSample(sampleName, variant = 0) {
   } catch (err) {
     logger.error('Sample preview error:', err);
     return false;
+  }
+}
+
+// ============================================
+// ARRANGEMENT PLAYBACK
+// ============================================
+
+let playheadCallback = null;
+let playheadLoopActive = false;
+let playbackStartTime = 0;
+let currentCps = 0.5; // cycles per second (default 120 BPM / 60 / 4)
+
+// Set callback for playhead position updates
+export function setPlayheadCallback(callback) {
+  playheadCallback = callback;
+}
+
+// Get current playback position in bars (using time-based tracking)
+export function getPlaybackPositionBars() {
+  if (!repl) return 0;
+
+  try {
+    const { scheduler } = repl;
+
+    // If scheduler is not started, return 0
+    if (!scheduler.started) return 0;
+
+    // Try to get phase from scheduler first
+    if (typeof scheduler.phase === 'number' && scheduler.phase > 0) {
+      return scheduler.phase;
+    }
+
+    // Fallback: calculate position based on elapsed time
+    const ctx = getAudioContext();
+    if (ctx && playbackStartTime > 0) {
+      const elapsed = ctx.currentTime - playbackStartTime;
+      const cps = scheduler.cps || currentCps;
+      return elapsed * cps;
+    }
+
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Start playhead animation loop
+export function startPlayheadLoop() {
+  if (playheadLoopActive) return;
+  playheadLoopActive = true;
+
+  // Record start time
+  const ctx = getAudioContext();
+  if (ctx) {
+    playbackStartTime = ctx.currentTime;
+  }
+
+  const update = () => {
+    if (!playheadLoopActive) return;
+
+    if (playheadCallback && repl) {
+      const position = getPlaybackPositionBars();
+      playheadCallback(position);
+    }
+
+    requestAnimationFrame(update);
+  };
+
+  requestAnimationFrame(update);
+}
+
+// Stop playhead animation loop
+export function stopPlayheadLoop() {
+  playheadLoopActive = false;
+  playbackStartTime = 0;
+}
+
+// Reset playback start time (for looping)
+export function resetPlaybackTime() {
+  const ctx = getAudioContext();
+  if (ctx) {
+    playbackStartTime = ctx.currentTime;
+  }
+}
+
+// Build a time mask pattern for a clip
+// Creates a pattern of 1s and 0s where 1 = clip is active
+function buildTimeMask(startBar, durationBars, totalBars) {
+  // Create array representing each bar: 1 = active, ~ = silent
+  const mask = [];
+  for (let i = 0; i < totalBars; i++) {
+    if (i >= startBar && i < startBar + durationBars) {
+      mask.push('1');
+    } else {
+      mask.push('~');
+    }
+  }
+  // Return as mini notation string
+  return mask.join(' ');
+}
+
+// Build the full arrangement pattern from all tracks
+// Uses time masking so clips only play during their designated time slots
+export function buildArrangementPattern(arrangement, patternLibrary = []) {
+  if (!arrangement || !arrangement.tracks) return null;
+
+  try {
+    const { tracks, lengthBars, loopEnabled, loopStart, loopEnd } = arrangement;
+
+    // Use loop range if enabled, otherwise full arrangement
+    const effectiveLength = loopEnabled ? (loopEnd - loopStart) : lengthBars;
+    const effectiveStart = loopEnabled ? loopStart : 0;
+
+    // Check for solo tracks
+    const hasSolo = tracks.some(t => t.solo);
+
+    // Filter active tracks
+    const activeTracks = tracks.filter(track => {
+      if (hasSolo) return track.solo && !track.muted;
+      return !track.muted;
+    });
+
+    if (activeTracks.length === 0) return null;
+
+    // Collect all clip patterns with their timing
+    const allClipPatterns = [];
+
+    for (const track of activeTracks) {
+      for (const clip of track.clips) {
+        const clipEnd = clip.startBar + clip.durationBars;
+        const effectiveEnd = effectiveStart + effectiveLength;
+
+        // Skip clips completely outside the effective range
+        if (clip.startBar >= effectiveEnd || clipEnd <= effectiveStart) continue;
+
+        // Build the clip's pattern from its layers
+        let clipLayers;
+
+        // First check if clip has its own layers (most common case)
+        if (clip.layers && clip.layers.length > 0) {
+          clipLayers = clip.layers;
+        } else if (clip.patternId) {
+          // Look up pattern from library
+          const patternDef = patternLibrary.find(p => p.id === clip.patternId);
+          if (!patternDef) continue;
+
+          // Patterns from library have 'code' not 'layers', so wrap it
+          if (patternDef.layers) {
+            clipLayers = patternDef.layers;
+          } else if (patternDef.code) {
+            clipLayers = [{
+              id: 'lib-layer',
+              code: patternDef.code,
+              muted: false,
+              solo: false,
+              params: patternDef.params || {},
+            }];
+          } else {
+            continue;
+          }
+        } else {
+          continue;
+        }
+
+        const basePattern = buildCombinedPattern(clipLayers);
+        if (!basePattern) continue;
+
+        // Apply track params (gain, pan, effects)
+        let pattern = basePattern;
+
+        if (track.params.gain !== undefined && track.params.gain !== 1) {
+          pattern = pattern.gain(track.params.gain);
+        }
+        if (track.params.pan !== undefined && track.params.pan !== 0) {
+          pattern = pattern.pan(track.params.pan);
+        }
+        if (track.params.reverb !== undefined && track.params.reverb > 0) {
+          pattern = pattern.room(track.params.reverb);
+        }
+        if (track.params.delay !== undefined && track.params.delay > 0) {
+          pattern = pattern.delay(track.params.delay);
+        }
+
+        // Calculate clip position relative to effective range
+        const relativeStart = Math.max(0, clip.startBar - effectiveStart);
+        const relativeEnd = Math.min(effectiveLength, clipEnd - effectiveStart);
+        const relativeDuration = relativeEnd - relativeStart;
+
+        // Create a time mask for this clip within the effective range
+        const maskString = buildTimeMask(relativeStart, relativeDuration, effectiveLength);
+        const maskPattern = mini(maskString).slow(effectiveLength);
+
+        // Apply the mask using mask() - this keeps the original rhythm
+        // but silences the pattern outside the clip's time range
+        let maskedPattern = pattern.mask(maskPattern);
+
+        allClipPatterns.push(maskedPattern);
+      }
+    }
+
+    if (allClipPatterns.length === 0) return null;
+    if (allClipPatterns.length === 1) return allClipPatterns[0];
+
+    // Stack all clip patterns
+    let combined = allClipPatterns[0];
+    for (let i = 1; i < allClipPatterns.length; i++) {
+      combined = combined.stack(allClipPatterns[i]);
+    }
+
+    return combined;
+  } catch (err) {
+    logger.error('Error building arrangement pattern:', err);
+    return null;
+  }
+}
+
+// Evaluate and play arrangement
+export async function evaluateArrangement(arrangement, patternLibrary, bpm = 120) {
+  try {
+    if (!repl) {
+      createRepl();
+    }
+
+    const cps = bpm / 60 / 4;
+    const { scheduler } = repl;
+    scheduler.setCps(cps);
+
+    const pattern = buildArrangementPattern(arrangement, patternLibrary);
+
+    if (pattern) {
+      scheduler.setPattern(pattern);
+      logger.log('Arrangement evaluated');
+      return { success: true };
+    } else {
+      // Empty arrangement - create silence
+      scheduler.setPattern(mini('~').s());
+      return { success: true };
+    }
+  } catch (err) {
+    logger.error('Arrangement evaluation error:', err);
+    return { success: false, error: err.message };
   }
 }
 

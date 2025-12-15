@@ -6,7 +6,7 @@ import CodeEditor from './components/Editor/CodeEditor';
 import SamplePad from './components/Editor/SamplePad';
 import CheatSheet from './components/Editor/CheatSheet';
 import PatternList from './components/PatternManager/PatternList';
-import Timeline from './components/Sequencer/Timeline';
+import { ArrangementView } from './components/ArrangementView';
 import Visualizer from './components/Visualizer/Visualizer';
 import StepSequencer from './components/StepSequencer/StepSequencer';
 import MelodicSequencer from './components/MelodicSequencer/MelodicSequencer';
@@ -100,9 +100,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* Timeline at bottom - shows layers */}
+          {/* Arrangement View at bottom - DAW-style timeline */}
           <div className="h-80 flex-shrink-0 border-t border-studio-600">
-            <Timeline />
+            <ArrangementView />
           </div>
         </main>
       </div>

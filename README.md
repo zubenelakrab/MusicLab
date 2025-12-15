@@ -4,10 +4,20 @@ A powerful web-based music production environment built on [Strudel](https://str
 
 ## Features
 
+### DAW-Style Arrangement View
+- Multi-track timeline with drag-and-drop clips
+- Real-time playhead animation synced to audio engine
+- Track controls: Mute, Solo, Volume, Pan per track
+- Clip positioning with snap-to-grid
+- Loop regions with visual markers
+- Zoom and scroll controls
+- Double-click to create inline clips
+- Drag patterns from library to timeline
+
 ### Live Coding Editor
 - Real-time pattern evaluation with Strudel mini notation
 - Syntax highlighting and autocomplete for 296+ samples
-- Multi-layer system with independent parameters per layer
+- Per-clip code editing in arrangement
 - Cheat sheet with pattern examples and sample browser
 
 ### Step Sequencer (Drum Machine)
@@ -22,9 +32,9 @@ A powerful web-based music production environment built on [Strudel](https://str
 - 8 melodic presets (arpeggios, basslines, melodies)
 - Color-coded notes for easy visualization
 
-### Layer Mixer
-- Unlimited layers with solo/mute controls
-- Per-layer parameters: Gain, Pan, Speed, Cutoff, Resonance
+### Track Mixer
+- Unlimited tracks with solo/mute controls
+- Per-track parameters: Gain, Pan, Speed, Cutoff, Resonance
 - FT2-style oscilloscope per channel
 - Stack drum patterns with melodies seamlessly
 
@@ -38,10 +48,11 @@ A powerful web-based music production environment built on [Strudel](https://str
 - Export as WAV or WebM format
 - Built-in audio conversion
 
-### Pattern Management
-- Save and load patterns
-- Export/import compositions as JSON
-- Pattern library with categories
+### Project Management
+- Save and load full arrangements with tracks
+- Export/import projects as JSON (v2.0 format)
+- Backwards compatible with legacy layer format
+- Pattern library with categories and drag-to-timeline
 
 ## Installation
 
@@ -116,13 +127,13 @@ MusicLab/
 ├── client/                 # React + Vite frontend
 │   ├── src/
 │   │   ├── components/     # UI components
+│   │   │   ├── ArrangementView/  # DAW-style timeline
 │   │   │   ├── Editor/     # Code editor, cheat sheet
-│   │   │   ├── Sequencer/  # Timeline, layers, scopes
 │   │   │   ├── StepSequencer/    # Drum machine
 │   │   │   ├── MelodicSequencer/ # Note sequencer
 │   │   │   ├── Visualizer/       # Audio visualizations
 │   │   │   └── Transport/        # Playback controls
-│   │   ├── hooks/          # useStrudel, useRecording
+│   │   ├── hooks/          # useStrudel, useArrangement
 │   │   ├── store/          # Zustand state management
 │   │   ├── strudel/        # Audio engine wrapper
 │   │   └── data/           # Sample database

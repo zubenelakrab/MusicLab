@@ -313,16 +313,27 @@ function SampleButton({ sample, desc, onInsert, onOpenVariants }) {
 }
 
 export default function SamplePad() {
-  const { currentPattern, selectedLayerIndex, updateLayerCode } = useStore();
+  const { editingClip, arrangement, updateEditingClipCode } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [variantPopup, setVariantPopup] = useState(null); // { sample, position }
 
-  const currentLayer = currentPattern.layers?.[selectedLayerIndex];
-  const currentCode = currentLayer?.code || '';
+  // Get current clip code
+  const getCurrentCode = () => {
+    if (!editingClip) return '';
+    const track = arrangement.tracks.find(t => t.id === editingClip.trackId);
+    if (!track) return '';
+    const clip = track.clips.find(c => c.id === editingClip.clipId);
+    if (!clip || !clip.layers || !clip.layers[0]) return '';
+    return clip.layers[0].code || '';
+  };
+
+  const currentCode = getCurrentCode();
+  const hasEditingClip = !!editingClip;
 
   const insertSample = (sample) => {
+    if (!hasEditingClip) return;
     const newCode = currentCode ? `${currentCode} ${sample}` : sample;
-    updateLayerCode(selectedLayerIndex, newCode);
+    updateEditingClipCode(newCode);
   };
 
   const openVariants = (sample, position) => {
@@ -334,6 +345,7 @@ export default function SamplePad() {
   };
 
   const insertOperator = (op) => {
+    if (!hasEditingClip) return;
     let newCode;
     if (op === '[]') {
       newCode = `[${currentCode}]`;
@@ -346,7 +358,7 @@ export default function SamplePad() {
     } else {
       newCode = `${currentCode}${op}`;
     }
-    updateLayerCode(selectedLayerIndex, newCode);
+    updateEditingClipCode(newCode);
   };
 
   
@@ -367,7 +379,7 @@ export default function SamplePad() {
           <div className="flex flex-col">
             <span className="text-sm text-gray-400">Samples</span>
             <span className="text-xs text-gray-500">
-              {totalSamples} disponibles
+              {hasEditingClip ? 'Click para agregar al clip' : 'Selecciona un clip primero'}
             </span>
           </div>
         </div>

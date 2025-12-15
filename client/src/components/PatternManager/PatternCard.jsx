@@ -1,16 +1,31 @@
-export default function PatternCard({ pattern, onAddAsLayer, onReplace, onDelete, isActive }) {
+import { GripVertical } from 'lucide-react';
+
+export default function PatternCard({ pattern, onAddAsTrack, onReplace, onDelete, isActive }) {
+  // Handle drag start - allows dragging to arrangement
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('patternId', pattern.id);
+    e.dataTransfer.setData('patternCode', pattern.code);
+    e.dataTransfer.setData('patternName', pattern.name);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
   return (
     <div
-      className={`p-3 rounded-lg transition-all ${
+      className={`p-3 rounded-lg transition-all cursor-grab active:cursor-grabbing ${
         isActive
           ? 'bg-accent-primary/20 border border-accent-primary'
           : 'bg-studio-700 border border-transparent hover:border-studio-500'
       }`}
+      draggable
+      onDragStart={handleDragStart}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-white truncate">{pattern.name}</h4>
-          <p className="text-xs text-gray-500 font-mono truncate mt-1">{pattern.code}</p>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <GripVertical size={14} className="text-gray-500 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-medium text-white truncate">{pattern.name}</h4>
+            <p className="text-xs text-gray-500 font-mono truncate mt-0.5">{pattern.code}</p>
+          </div>
         </div>
         <button
           onClick={(e) => {
@@ -40,11 +55,11 @@ export default function PatternCard({ pattern, onAddAsLayer, onReplace, onDelete
       {/* Action buttons */}
       <div className="flex gap-2 mt-2 pt-2 border-t border-studio-600">
         <button
-          onClick={() => onAddAsLayer(pattern)}
+          onClick={() => onAddAsTrack(pattern)}
           className="flex-1 px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors"
-          title="Agregar como nueva capa"
+          title="Agregar como nuevo track"
         >
-          + Agregar capa
+          + Track
         </button>
         <button
           onClick={() => onReplace(pattern)}
@@ -54,6 +69,10 @@ export default function PatternCard({ pattern, onAddAsLayer, onReplace, onDelete
           Cargar
         </button>
       </div>
+
+      <p className="text-[10px] text-gray-600 mt-1 text-center">
+        Arrastra al timeline para crear clip
+      </p>
     </div>
   );
 }
