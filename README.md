@@ -58,7 +58,7 @@ A powerful web-based music production environment built on [Strudel](https://str
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/musiclab.git
+git clone https://github.com/zubenelakrab/musiclab.git
 cd musiclab
 
 # Install all dependencies (client + server)

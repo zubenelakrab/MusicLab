@@ -1,10 +1,10 @@
 {
-  "name": "musiclab-client",
+  "name": "@zubenelakrab/musiclab-client",
   "private": false,
   "version": "1.0.0",
   "type": "module",
   "description": "MusicLab web client - React-based music production interface",
-  "author": "MusicLab Contributors",
+  "author": "zubenelakrab",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

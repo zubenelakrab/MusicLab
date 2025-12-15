@@ -1,5 +1,5 @@
 {
-  "name": "musiclab",
+  "name": "@zubenelakrab/musiclab",
   "version": "1.0.0",
   "description": "Web-based music production environment with live coding and visual sequencers, built on Strudel",
   "private": false,
@@ -18,16 +18,16 @@
     "music-production",
     "beat-maker"
   ],
-  "author": "MusicLab Contributors",
+  "author": "zubenelakrab",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/musiclab.git"
+    "url": "git+https://github.com/zubenelakrab/musiclab.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/musiclab/issues"
+    "url": "https://github.com/zubenelakrab/musiclab/issues"
   },
-  "homepage": "https://github.com/yourusername/musiclab#readme",
+  "homepage": "https://github.com/zubenelakrab/musiclab#readme",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "node server/index.js",
