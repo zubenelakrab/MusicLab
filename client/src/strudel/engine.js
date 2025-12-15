@@ -399,3 +399,187 @@ export function getSchedulerTime() {
     return null;
   }
 }
+
+// ============================================
+// RECORDING FUNCTIONALITY
+// ============================================
+
+let mediaRecorder = null;
+let recordedChunks = [];
+let mediaStreamDest = null;
+let recordingSetup = false;
+
+// Setup recording infrastructure (connect to audio graph)
+export function setupRecording() {
+  if (recordingSetup) return true;
+
+  try {
+    const ctx = getAudioContext();
+    if (!ctx || !analyserNode) {
+      console.warn('[MusicLab] Cannot setup recording: audio not initialized');
+      return false;
+    }
+
+    // Create MediaStreamDestination for recording
+    mediaStreamDest = ctx.createMediaStreamDestination();
+
+    // Connect analyser to mediaStreamDest (in parallel with destination)
+    analyserNode.connect(mediaStreamDest);
+
+    recordingSetup = true;
+    console.log('[MusicLab] Recording infrastructure ready');
+    return true;
+  } catch (err) {
+    console.error('[MusicLab] Failed to setup recording:', err);
+    return false;
+  }
+}
+
+// Start recording
+export function startRecording() {
+  if (!recordingSetup) {
+    if (!setupRecording()) {
+      return false;
+    }
+  }
+
+  try {
+    recordedChunks = [];
+
+    // Determine best supported mime type
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : 'audio/ogg';
+
+    mediaRecorder = new MediaRecorder(mediaStreamDest.stream, { mimeType });
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        recordedChunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.onerror = (e) => {
+      console.error('[MusicLab] Recording error:', e);
+    };
+
+    // Start recording with 100ms chunks for memory efficiency
+    mediaRecorder.start(100);
+    console.log('[MusicLab] Recording started');
+    return true;
+  } catch (err) {
+    console.error('[MusicLab] Failed to start recording:', err);
+    return false;
+  }
+}
+
+// Stop recording and return blob
+export function stopRecording() {
+  return new Promise((resolve, reject) => {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+      resolve(null);
+      return;
+    }
+
+    mediaRecorder.onstop = () => {
+      try {
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const blob = new Blob(recordedChunks, { type: mimeType });
+        recordedChunks = [];
+        console.log('[MusicLab] Recording stopped, blob size:', blob.size);
+        resolve(blob);
+      } catch (err) {
+        console.error('[MusicLab] Failed to create recording blob:', err);
+        reject(err);
+      }
+    };
+
+    mediaRecorder.stop();
+  });
+}
+
+// Get current recording state
+export function getRecordingState() {
+  if (!mediaRecorder) return 'inactive';
+  return mediaRecorder.state;
+}
+
+// Check if currently recording
+export function isRecording() {
+  return mediaRecorder && mediaRecorder.state === 'recording';
+}
+
+// Convert audio blob to WAV format
+export async function convertToWav(blob) {
+  try {
+    const ctx = new AudioContext();
+    const arrayBuffer = await blob.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    const wavBlob = audioBufferToWav(audioBuffer);
+    await ctx.close();
+    return wavBlob;
+  } catch (err) {
+    console.error('[MusicLab] Failed to convert to WAV:', err);
+    throw err;
+  }
+}
+
+// Convert AudioBuffer to WAV Blob
+function audioBufferToWav(buffer) {
+  const numChannels = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const format = 1; // PCM
+  const bitDepth = 16;
+
+  // Interleave channels
+  const length = buffer.length * numChannels * (bitDepth / 8);
+  const outputBuffer = new ArrayBuffer(44 + length);
+  const view = new DataView(outputBuffer);
+
+  // Write WAV header
+  // "RIFF" chunk descriptor
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + length, true);
+  writeString(view, 8, 'WAVE');
+
+  // "fmt " sub-chunk
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Sub-chunk size
+  view.setUint16(20, format, true); // Audio format (PCM)
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true); // Byte rate
+  view.setUint16(32, numChannels * (bitDepth / 8), true); // Block align
+  view.setUint16(34, bitDepth, true);
+
+  // "data" sub-chunk
+  writeString(view, 36, 'data');
+  view.setUint32(40, length, true);
+
+  // Write PCM samples
+  const channels = [];
+  for (let i = 0; i < numChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  let offset = 44;
+  for (let i = 0; i < buffer.length; i++) {
+    for (let ch = 0; ch < numChannels; ch++) {
+      const sample = Math.max(-1, Math.min(1, channels[ch][i]));
+      const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+      view.setInt16(offset, intSample, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([outputBuffer], { type: 'audio/wav' });
+}
+
+// Helper to write string to DataView
+function writeString(view, offset, string) {
+  for (let i = 0; i < string.length; i++) {
+    view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
