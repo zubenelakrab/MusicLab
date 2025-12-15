@@ -122,7 +122,7 @@ function buildLayerPattern(layer) {
       pattern = mini(code).s();
     }
 
-    // Apply layer-specific parameters
+    // Apply layer-specific parameters (mixer)
     if (params.gain !== undefined && params.gain !== 1) {
       pattern = pattern.gain(params.gain);
     }
@@ -137,6 +137,44 @@ function buildLayerPattern(layer) {
     }
     if (params.pan !== undefined && params.pan !== 0) {
       pattern = pattern.pan(params.pan);
+    }
+
+    // Apply effects
+    // Reverb
+    if (params.reverb !== undefined && params.reverb > 0) {
+      pattern = pattern.room(params.reverb);
+      if (params.reverbSize !== undefined && params.reverbSize !== 2) {
+        pattern = pattern.roomsize(params.reverbSize);
+      }
+    }
+
+    // Delay
+    if (params.delay !== undefined && params.delay > 0) {
+      pattern = pattern.delay(params.delay);
+      if (params.delayTime !== undefined && params.delayTime !== 0.25) {
+        pattern = pattern.delaytime(params.delayTime);
+      }
+      if (params.delayFeedback !== undefined && params.delayFeedback !== 0.3) {
+        pattern = pattern.delayfeedback(params.delayFeedback);
+      }
+    }
+
+    // Distortion
+    if (params.distortion !== undefined && params.distortion > 0) {
+      pattern = pattern.distort(params.distortion);
+    }
+
+    // High-Pass Filter
+    if (params.hpf !== undefined && params.hpf > 20) {
+      pattern = pattern.hpf(params.hpf);
+    }
+
+    // Phaser
+    if (params.phaser !== undefined && params.phaser > 0) {
+      pattern = pattern.phaser(params.phaser);
+      if (params.phaserDepth !== undefined && params.phaserDepth !== 0.5) {
+        pattern = pattern.phaserdepth(params.phaserDepth);
+      }
     }
 
     return pattern;

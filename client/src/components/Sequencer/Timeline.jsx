@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Plus, VolumeX, Volume2, Headphones, Trash2 } from 'lucide-react';
+import { Plus, VolumeX, Volume2, Headphones, Trash2, Sliders } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 import LayerScope from './LayerScope';
+import EffectsRack from '../EffectsRack/EffectsRack';
 
 // Colors for layers
 const LAYER_COLORS = [
@@ -29,11 +30,27 @@ export default function Timeline() {
   } = useStore();
 
   const { isPlaying } = useStrudel();
+  const [showEffects, setShowEffects] = useState(false);
+  const [effectsLayerIndex, setEffectsLayerIndex] = useState(null);
+
   const layers = currentPattern.layers || [];
   const selectedLayer = layers[selectedLayerIndex];
 
   // Check if any layer is soloed
   const hasSolo = layers.some(l => l.solo);
+
+  // Check if layer has active effects
+  const hasActiveEffects = (layer) => {
+    const p = layer.params;
+    return (p?.reverb > 0 || p?.delay > 0 || p?.distortion > 0 || p?.hpf > 20 || p?.phaser > 0);
+  };
+
+  // Open effects rack for a specific layer
+  const openEffectsForLayer = (index) => {
+    selectLayer(index);
+    setEffectsLayerIndex(index);
+    setShowEffects(true);
+  };
 
   return (
     <div className="flex flex-col h-full bg-studio-800 overflow-hidden">
@@ -117,6 +134,20 @@ export default function Timeline() {
                         title="Solo"
                       >
                         <Headphones size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEffectsForLayer(index);
+                        }}
+                        className={`w-5 h-5 rounded flex items-center justify-center ${
+                          hasActiveEffects(layer)
+                            ? 'bg-cyan-500 text-black'
+                            : 'bg-studio-500 text-gray-400 hover:bg-cyan-600 hover:text-white'
+                        }`}
+                        title="Effects"
+                      >
+                        <Sliders size={12} />
                       </button>
                       {layers.length > 1 && (
                         <button
@@ -276,6 +307,12 @@ export default function Timeline() {
           </div>
         )}
       </div>
+
+      {/* Effects Rack Modal */}
+      <EffectsRack
+        isOpen={showEffects}
+        onClose={() => setShowEffects(false)}
+      />
     </div>
   );
 }

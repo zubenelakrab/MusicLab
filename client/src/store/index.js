@@ -5,11 +5,22 @@ const generateId = () => `layer-${Date.now()}-${Math.random().toString(36).subst
 
 // Default parameters for a layer
 const defaultLayerParams = {
+  // Mixer
   gain: 0.8,
   cutoff: 8000,
   resonance: 0,
   speed: 1,
   pan: 0,
+  // Effects
+  reverb: 0,
+  reverbSize: 2,
+  delay: 0,
+  delayTime: 0.25,
+  delayFeedback: 0.3,
+  distortion: 0,
+  hpf: 0,
+  phaser: 0,
+  phaserDepth: 0.5,
 };
 
 // Create a new layer
