@@ -2,6 +2,8 @@
 
 A powerful web-based music production environment built on [Strudel](https://strudel.cc/), the JavaScript port of TidalCycles. Create beats, melodies, and full compositions using live coding or visual sequencers.
 
+![MusicLab Screenshot](ML1.png)
+
 ## Features
 
 ### DAW-Style Arrangement View
