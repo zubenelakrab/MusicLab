@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search } from 'lucide-react';
+import { Search, ChevronRight, X, Volume2 } from 'lucide-react';
 import { useStore } from '../../store';
-import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES } from '../../data/samples';
+import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
+import { previewSample } from '../../strudel/engine';
 
 // Operators with detailed explanations
 const OPERATORS = [
@@ -153,10 +154,168 @@ function OperatorTooltip({ op, children }) {
   );
 }
 
+// Variant popup component
+function VariantPopup({ sample, position, onClose, onInsert }) {
+  const variantCount = SAMPLE_VARIANT_COUNTS[sample] || 1;
+  const [selectedVariant, setSelectedVariant] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(null);
+  const popupRef = useRef(null);
+
+  const handlePreview = async (variant, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setSelectedVariant(variant);
+    setIsPlaying(variant);
+    await previewSample(sample, variant);
+    setTimeout(() => setIsPlaying(null), 400);
+  };
+
+  const handleInsert = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const code = selectedVariant > 0 ? `${sample}:${selectedVariant}` : sample;
+    onInsert(code);
+    onClose();
+  };
+
+  // Close on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (popupRef.current && !popupRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 100);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
+  // Generate variant array
+  const variants = Array.from({ length: variantCount }, (_, i) => i);
+
+  return createPortal(
+    <div
+      ref={popupRef}
+      className="fixed z-[9998] bg-studio-800 border border-studio-500 rounded-lg shadow-2xl overflow-hidden"
+      style={{
+        top: Math.min(position.top, window.innerHeight - 250),
+        left: Math.min(position.left, window.innerWidth - 280),
+        minWidth: '240px',
+        maxWidth: '300px',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
+        <div className="flex items-center gap-2">
+          <Volume2 size={14} className="text-accent-primary" />
+          <span className="text-sm font-medium text-white">{sample}</span>
+          <span className="text-xs text-gray-400">({variantCount})</span>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1 text-gray-400 hover:text-white rounded"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* Variant grid */}
+      <div className="p-2 max-h-48 overflow-y-auto">
+        <div className="grid grid-cols-6 gap-1">
+          {variants.map((variant) => (
+            <button
+              key={variant}
+              onClick={(e) => handlePreview(variant, e)}
+              className={`
+                px-1.5 py-1.5 text-xs rounded transition-all
+                ${isPlaying === variant
+                  ? 'bg-accent-primary text-black scale-110'
+                  : selectedVariant === variant
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-studio-600 text-gray-300 hover:bg-studio-500'
+                }
+              `}
+            >
+              :{variant}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Insert button */}
+      <div className="px-3 py-2 bg-studio-700 border-t border-studio-600">
+        <button
+          onClick={handleInsert}
+          className="w-full px-3 py-1.5 text-sm bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center justify-center gap-1.5 font-medium"
+        >
+          <ChevronRight size={14} />
+          Insertar {sample}:{selectedVariant}
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// Sample button with variant support
+function SampleButton({ sample, desc, onInsert, onOpenVariants }) {
+  const variantCount = SAMPLE_VARIANT_COUNTS[sample] || 1;
+  const hasVariants = variantCount > 1;
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleClick = (e) => {
+    if (hasVariants) {
+      // Open variant popup
+      const rect = e.currentTarget.getBoundingClientRect();
+      onOpenVariants(sample, { top: rect.bottom + 4, left: rect.left });
+    } else {
+      // Insert directly
+      onInsert(sample);
+    }
+  };
+
+  const handleRightClick = async (e) => {
+    e.preventDefault();
+    setIsPlaying(true);
+    await previewSample(sample, 0);
+    setTimeout(() => setIsPlaying(false), 400);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      onContextMenu={handleRightClick}
+      title={desc || (hasVariants ? `${sample} (${variantCount} variantes)` : sample)}
+      className={`
+        relative px-2 py-2 text-xs rounded transition-all truncate text-left
+        ${isPlaying
+          ? 'bg-accent-primary text-black scale-105'
+          : 'bg-studio-600 hover:bg-accent-tertiary hover:text-black'
+        }
+      `}
+    >
+      {sample}
+      {hasVariants && (
+        <span className="absolute -top-1 right-0.5 text-[9px] text-blue-400 font-medium">
+          +{variantCount}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function SamplePad() {
   const { currentPattern, selectedLayerIndex, updateLayerCode } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAllCategories, setShowAllCategories] = useState(true);
+  const [variantPopup, setVariantPopup] = useState(null); // { sample, position }
 
   const currentLayer = currentPattern.layers?.[selectedLayerIndex];
   const currentCode = currentLayer?.code || '';
@@ -164,6 +323,14 @@ export default function SamplePad() {
   const insertSample = (sample) => {
     const newCode = currentCode ? `${currentCode} ${sample}` : sample;
     updateLayerCode(selectedLayerIndex, newCode);
+  };
+
+  const openVariants = (sample, position) => {
+    setVariantPopup({ sample, position });
+  };
+
+  const closeVariants = () => {
+    setVariantPopup(null);
   };
 
   const insertOperator = (op) => {
@@ -182,6 +349,7 @@ export default function SamplePad() {
     updateLayerCode(selectedLayerIndex, newCode);
   };
 
+  
   // Filter samples based on search
   const filteredSamples = searchTerm.trim()
     ? SAMPLE_NAMES.filter(name =>
@@ -228,13 +396,12 @@ export default function SamplePad() {
             ) : (
               <div className="grid grid-cols-3 gap-1 max-h-96 overflow-y-auto">
                 {filteredSamples.map((sample) => (
-                  <button
+                  <SampleButton
                     key={sample}
-                    onClick={() => insertSample(sample)}
-                    className="px-2 py-1.5 text-xs bg-studio-600 hover:bg-accent-tertiary hover:text-black rounded transition-colors truncate text-left"
-                  >
-                    {sample}
-                  </button>
+                    sample={sample}
+                    onInsert={insertSample}
+                    onOpenVariants={openVariants}
+                  />
                 ))}
               </div>
             )}
@@ -267,15 +434,14 @@ export default function SamplePad() {
                   {category} <span className="text-gray-600">({samples.length})</span>
                 </h4>
                 <div className="grid grid-cols-3 gap-1">
-                  {samples.map((sample) => (
-                    <button
-                      key={sample.name}
-                      onClick={() => insertSample(sample.name)}
-                      title={sample.desc}
-                      className="px-2 py-1.5 text-xs bg-studio-600 hover:bg-accent-tertiary hover:text-black rounded transition-colors truncate text-left"
-                    >
-                      {sample.name}
-                    </button>
+                  {samples.map((sampleObj) => (
+                    <SampleButton
+                      key={sampleObj.name}
+                      sample={sampleObj.name}
+                      desc={sampleObj.desc}
+                      onInsert={insertSample}
+                      onOpenVariants={openVariants}
+                    />
                   ))}
                 </div>
               </div>
@@ -288,19 +454,28 @@ export default function SamplePad() {
               </h4>
               <div className="grid grid-cols-4 gap-1 max-h-64 overflow-y-auto">
                 {SAMPLE_NAMES.sort().map((sample) => (
-                  <button
+                  <SampleButton
                     key={sample}
-                    onClick={() => insertSample(sample)}
-                    className="px-1 py-1 text-[10px] bg-studio-600 hover:bg-accent-tertiary hover:text-black rounded transition-colors truncate text-left"
-                  >
-                    {sample}
-                  </button>
+                    sample={sample}
+                    onInsert={insertSample}
+                    onOpenVariants={openVariants}
+                  />
                 ))}
               </div>
             </div>
           </>
         )}
       </div>
+
+      {/* Variant popup */}
+      {variantPopup && (
+        <VariantPopup
+          sample={variantPopup.sample}
+          position={variantPopup.position}
+          onClose={closeVariants}
+          onInsert={insertSample}
+        />
+      )}
     </div>
   );
 }

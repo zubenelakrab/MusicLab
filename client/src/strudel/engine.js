@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 
 let repl = null;
 let audioInitialized = false;
+let audioInitializing = false;
 let currentLayers = [];
 let analyserNode = null;
 let analyserConnected = false;
@@ -74,7 +75,15 @@ export function getAnalyser() {
 
 export async function initAudio() {
   if (audioInitialized) return true;
+  if (audioInitializing) {
+    // Wait for ongoing initialization
+    while (audioInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return audioInitialized;
+  }
 
+  audioInitializing = true;
   try {
     // Wait for user click to initialize audio
     await initAudioOnFirstClick();
@@ -90,6 +99,8 @@ export async function initAudio() {
   } catch (err) {
     logger.error('Failed to initialize audio:', err);
     return false;
+  } finally {
+    audioInitializing = false;
   }
 }
 
@@ -664,5 +675,173 @@ function audioBufferToWav(buffer) {
 function writeString(view, offset, string) {
   for (let i = 0; i < string.length; i++) {
     view.setUint8(offset + i, string.charCodeAt(i));
+  }
+}
+
+// ============================================
+// SAMPLE PREVIEW (ONE-SHOT)
+// ============================================
+
+// Initialize audio directly (for use when already in a click handler)
+async function initAudioDirect() {
+  if (audioInitialized) return true;
+  if (audioInitializing) {
+    while (audioInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    return audioInitialized;
+  }
+
+  audioInitializing = true;
+  try {
+    // Create audio context directly since we're already in a click handler
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) {
+      logger.error('AudioContext not supported');
+      return false;
+    }
+
+    // Trigger Strudel's audio initialization by calling initAudioOnFirstClick
+    // This will resolve immediately if we're in a user gesture
+    const initPromise = initAudioOnFirstClick();
+
+    // Give it a moment to initialize
+    await Promise.race([
+      initPromise,
+      new Promise(resolve => setTimeout(resolve, 100))
+    ]);
+
+    // Install intercept
+    installDestinationIntercept();
+
+    // Load samples
+    await samples('github:tidalcycles/dirt-samples');
+
+    audioInitialized = true;
+    logger.log('Audio initialized directly');
+    return true;
+  } catch (err) {
+    logger.error('Failed to initialize audio directly:', err);
+    return false;
+  } finally {
+    audioInitializing = false;
+  }
+}
+
+// Preview a single sample with optional variant (plays once, doesn't loop)
+export async function previewSample(sampleName, variant = 0) {
+  try {
+    // Ensure audio is initialized and samples are loaded
+    if (!audioInitialized) {
+      const initialized = await initAudioDirect();
+      if (!initialized) {
+        logger.warn('Could not initialize audio for preview');
+        return false;
+      }
+    }
+
+    const ctx = getAudioContext();
+    if (!ctx) {
+      logger.warn('Audio context not available');
+      return false;
+    }
+
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
+    // Create a one-shot pattern that plays just once
+    // Using the :N notation for variant selection
+    const sampleCode = variant > 0 ? `${sampleName}:${variant}` : sampleName;
+
+    // Create repl if needed
+    if (!repl) {
+      createRepl();
+    }
+
+    // Use a very short pattern that plays once
+    const pattern = mini(sampleCode).s().gain(0.8);
+
+    // Get the scheduler and set a fast tempo for immediate playback
+    const { scheduler } = repl;
+    const originalCps = scheduler.cps;
+
+    // Set high CPS for fast playback, then schedule stop
+    scheduler.setCps(2);
+    scheduler.setPattern(pattern);
+    scheduler.start();
+
+    // Stop after a short duration (500ms should be enough for most samples)
+    setTimeout(() => {
+      scheduler.stop();
+      scheduler.setCps(originalCps);
+      // Restore previous pattern if we were in preview mode
+      if (savedLayers && savedLayers.length > 0) {
+        currentLayers = savedLayers;
+      }
+    }, 500);
+
+    return true;
+  } catch (err) {
+    logger.error('Sample preview error:', err);
+    return false;
+  }
+}
+
+// Preview sample using Web Audio API directly (more reliable one-shot)
+export async function previewSampleDirect(sampleName, variant = 0) {
+  try {
+    // Ensure audio is initialized and samples are loaded
+    if (!audioInitialized) {
+      const initialized = await initAudioDirect();
+      if (!initialized) {
+        logger.warn('Could not initialize audio for direct preview');
+        return false;
+      }
+    }
+
+    const ctx = getAudioContext();
+    if (!ctx) {
+      logger.warn('No audio context for direct preview');
+      return false;
+    }
+
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+
+    const sampleCode = variant > 0 ? `${sampleName}:${variant}` : sampleName;
+
+    if (!repl) {
+      createRepl();
+    }
+
+    const pattern = mini(sampleCode).s().gain(0.9);
+    const { scheduler } = repl;
+
+    const wasPlaying = scheduler.started;
+    const oldPattern = scheduler.pattern;
+    const oldCps = scheduler.cps;
+
+    scheduler.setCps(4);
+    scheduler.setPattern(pattern);
+    if (!wasPlaying) {
+      scheduler.start();
+    }
+
+    setTimeout(() => {
+      if (!wasPlaying) {
+        scheduler.stop();
+      }
+      if (oldPattern) {
+        scheduler.setPattern(oldPattern);
+      }
+      scheduler.setCps(oldCps);
+    }, 300);
+
+    return true;
+  } catch (err) {
+    logger.error('Direct preview error:', err);
+    return false;
   }
 }
