@@ -61,14 +61,16 @@ A powerful web-based music production environment built on [Strudel](https://str
 git clone https://github.com/yourusername/musiclab.git
 cd musiclab
 
-# Install dependencies
+# Install all dependencies (client + server)
 npm install
+cd server && npm install && cd ..
 
-# Start development server
+# Start everything (client + server)
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+- **Client**: http://localhost:5173
+- **Server API**: http://localhost:3001
 
 ## Usage
 
@@ -156,15 +158,29 @@ MusicLab/
 ## Development
 
 ```bash
-# Run client only
-npm run dev:client
-
-# Run with backend server
+# Run everything (client + server)
 npm run dev
 
-# Build for production
+# Run client only (no server)
+npm run dev:client
+
+# Run server only
+npm run dev:server
+
+# Build client for production
 npm run build
+
+# Preview production build
+npm run preview
 ```
+
+### Server API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/patterns` | GET/POST | Pattern library CRUD |
+| `/api/projects` | GET/POST | Project storage |
 
 ## Browser Support
 
