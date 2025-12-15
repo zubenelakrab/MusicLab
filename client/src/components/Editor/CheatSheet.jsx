@@ -105,7 +105,7 @@ const SECTIONS = [
       { pattern: '[bd, hh*4, ~ sd ~ sd]', desc: 'House clásico 4/4' },
       { pattern: '[bd, hh*8, ~ ~ sd ~]', desc: 'Techno básico' },
       { pattern: '[bd*2, hh*4, [~ sd]*2]', desc: 'House con kick doble' },
-      { pattern: '[bd, oh*2, ~ sd]', desc: 'House con open hat' },
+      { pattern: '[bd, ho*2, ~ sd]', desc: 'House con open hat' },
       { pattern: 'bd [~ bd] sd [bd ~]', desc: 'Offbeat house' },
     ]
   },

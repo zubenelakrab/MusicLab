@@ -318,3 +318,84 @@ export function setParams(params) {
     }
   }
 }
+
+// Preview functionality for step sequencer
+let savedLayers = null;
+let isPreviewMode = false;
+
+export async function startPreview(code, bpm = 120, swing = 0) {
+  if (!repl) {
+    createRepl();
+  }
+
+  try {
+    // Save current layers
+    savedLayers = [...currentLayers];
+    isPreviewMode = true;
+
+    const cps = bpm / 60 / 4;
+    const { scheduler } = repl;
+    scheduler.setCps(cps);
+
+    // Create preview pattern
+    let pattern = mini(code).s();
+
+    // Apply swing if set (0-100 maps to 0-0.5)
+    if (swing > 0 && typeof pattern.swing === 'function') {
+      try {
+        const swingAmount = swing / 100 * 0.5;
+        pattern = pattern.swing(swingAmount);
+      } catch (e) {
+        console.warn('[MusicLab] Swing not supported:', e);
+      }
+    }
+
+    scheduler.setPattern(pattern);
+    scheduler.start();
+
+    console.log('[MusicLab] Preview started:', code, swing > 0 ? `swing:${swing}%` : '');
+    return { success: true };
+  } catch (err) {
+    console.error('[MusicLab] Preview error:', err);
+    isPreviewMode = false;
+    return { success: false, error: err.message };
+  }
+}
+
+export function stopPreview() {
+  if (!repl) return;
+
+  try {
+    const { scheduler } = repl;
+    scheduler.stop();
+
+    // Restore previous layers if they existed
+    if (savedLayers && savedLayers.length > 0) {
+      currentLayers = savedLayers;
+    }
+    savedLayers = null;
+    isPreviewMode = false;
+
+    console.log('[MusicLab] Preview stopped');
+  } catch (err) {
+    console.error('[MusicLab] Stop preview error:', err);
+  }
+}
+
+export function isInPreviewMode() {
+  return isPreviewMode;
+}
+
+// Get scheduler timing info for step sync
+export function getSchedulerTime() {
+  if (!repl) return null;
+  try {
+    const { scheduler } = repl;
+    return {
+      phase: scheduler.phase || 0,
+      cps: scheduler.cps || 0.5,
+    };
+  } catch {
+    return null;
+  }
+}

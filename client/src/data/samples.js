@@ -17,7 +17,7 @@ export const ALL_SAMPLE_NAMES = [
   'jvbass', 'kick', 'kicklinn', 'koy', 'kurt', 'latibro', 'led', 'less', 'lighter', 'linnhats',
   'lt', 'made', 'made2', 'mash', 'mash2', 'metal', 'miniyeah', 'monsterb', 'moog', 'mouth', 'mp3',
   'msg', 'mt', 'mute', 'newnotes', 'noise', 'noise2', 'notes', 'num', 'numbers', 'oc', 'odx',
-  'off', 'oh', 'outdoor', 'pad', 'padlong', 'pebbles', 'perc', 'peri', 'pluck', 'popkick', 'print',
+  'off', 'outdoor', 'pad', 'padlong', 'pebbles', 'perc', 'peri', 'pluck', 'popkick', 'print',
   'proc', 'procshort', 'psr', 'rave', 'rave2', 'ravemono', 'rd', 'realclaps', 'reverbkick', 'rm',
   'rs', 'sax', 'sd', 'seawolf', 'sequential', 'sf', 'sheffield', 'short', 'sid', 'simplesine',
   'sine', 'sitar', 'sn', 'space', 'speakspell', 'speech', 'speechless', 'speedupdown', 'stab',
@@ -47,7 +47,7 @@ export const SAMPLES_BY_CATEGORY = {
   'Hi-Hats': [
     { name: 'hh', desc: 'Closed hat (13)' },
     { name: 'hh27', desc: 'Hi-hat 27' },
-    { name: 'oh', desc: 'Open hat (4)' },
+    { name: 'ho', desc: 'Open hat (6)' },
     { name: 'hc', desc: 'Hat cerrado' },
     { name: 'linnhats', desc: 'Linn hats' },
   ],
