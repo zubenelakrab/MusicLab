@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as engine from '../strudel/engine';
+import logger from '../utils/logger';
 
 export function useRecording() {
   const [isRecording, setIsRecording] = useState(false);
@@ -13,7 +14,7 @@ export function useRecording() {
     // Setup and start recording
     const success = engine.startRecording();
     if (!success) {
-      console.error('Failed to start recording');
+      logger.error('Failed to start recording');
       return false;
     }
 
@@ -60,7 +61,7 @@ export function useRecording() {
           finalBlob = await engine.convertToWav(blob);
           ext = 'wav';
         } catch (err) {
-          console.error('WAV conversion failed, downloading original format:', err);
+          logger.error('WAV conversion failed, downloading original format:', err);
           // Fallback to original format
         }
         setIsConverting(false);
@@ -76,9 +77,9 @@ export function useRecording() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      console.log(`[MusicLab] Downloaded recording as ${ext}`);
+      logger.log(`Downloaded recording as ${ext}`);
     } catch (err) {
-      console.error('Download failed:', err);
+      logger.error('Download failed:', err);
       setIsConverting(false);
     }
   }, [blob]);

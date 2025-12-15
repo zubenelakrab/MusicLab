@@ -1,0 +1,38 @@
+# Source files
+*.map
+*.ts
+!*.d.ts
+
+# Development
+.git
+.github
+.vscode
+.idea
+*.log
+
+# Test files
+__tests__
+*.test.js
+*.spec.js
+coverage
+
+# Build artifacts
+node_modules
+.cache
+.parcel-cache
+
+# Config files
+.eslintrc*
+.prettierrc*
+tsconfig.json
+jest.config.*
+vite.config.*
+tailwind.config.*
+postcss.config.*
+
+# Documentation source
+docs/
+
+# Development data
+server/data/*.json
+!server/data/.gitkeep

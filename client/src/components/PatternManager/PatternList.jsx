@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../../store';
 import PatternCard from './PatternCard';
 import PatternForm from './PatternForm';
+import logger from '../../utils/logger';
 
 const API_URL = '/api/patterns';
 
@@ -28,7 +29,7 @@ export default function PatternList() {
       const data = await res.json();
       setPatterns(data);
     } catch (err) {
-      console.error('Failed to fetch patterns:', err);
+      logger.error('Failed to fetch patterns:', err);
     } finally {
       setLoading(false);
     }
@@ -53,7 +54,7 @@ export default function PatternList() {
       addPattern(newPattern);
       setShowForm(false);
     } catch (err) {
-      console.error('Failed to save pattern:', err);
+      logger.error('Failed to save pattern:', err);
     }
   };
 
@@ -62,7 +63,7 @@ export default function PatternList() {
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
       setPatterns(patterns.filter(p => p.id !== id));
     } catch (err) {
-      console.error('Failed to delete pattern:', err);
+      logger.error('Failed to delete pattern:', err);
     }
   };
 

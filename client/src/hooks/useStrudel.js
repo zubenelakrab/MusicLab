@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useStore } from '../store';
 import * as engine from '../strudel/engine';
+import logger from '../utils/logger';
 
 export function useStrudel() {
   const [audioReady, setAudioReady] = useState(false);
@@ -26,7 +27,7 @@ export function useStrudel() {
       }
       return false;
     } catch (err) {
-      console.error('Failed to init audio:', err);
+      logger.error('Failed to init audio:', err);
       return false;
     }
   }, []);

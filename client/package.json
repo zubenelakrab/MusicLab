@@ -1,8 +1,11 @@
 {
   "name": "musiclab-client",
-  "private": true,
+  "private": false,
   "version": "1.0.0",
   "type": "module",
+  "description": "MusicLab web client - React-based music production interface",
+  "author": "MusicLab Contributors",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

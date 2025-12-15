@@ -1,5 +1,6 @@
 import { initAudioOnFirstClick, getAudioContext, webaudioRepl, samples } from '@strudel/webaudio';
 import { mini } from '@strudel/mini';
+import logger from '../utils/logger';
 
 let repl = null;
 let audioInitialized = false;
@@ -33,7 +34,7 @@ function installDestinationIntercept() {
     GainNode.prototype.connect = function(destination, ...args) {
       // Check if connecting to the audio destination
       if (destination === ctx.destination && analyserNode) {
-        console.log('[MusicLab] Intercepted connection to destination, routing through analyser');
+        logger.log('Intercepted connection to destination, routing through analyser');
         // Route through analyser instead
         originalConnect.call(this, analyserNode, ...args);
         if (!analyserConnected) {
@@ -47,9 +48,9 @@ function installDestinationIntercept() {
     };
 
     interceptInstalled = true;
-    console.log('[MusicLab] Destination intercept installed');
+    logger.log('Destination intercept installed');
   } catch (err) {
-    console.warn('[MusicLab] Could not install intercept:', err);
+    logger.warn('Could not install intercept:', err);
   }
 }
 
@@ -66,7 +67,7 @@ export function getAnalyser() {
 
     return analyserNode;
   } catch (err) {
-    console.warn('[MusicLab] Could not get analyser:', err);
+    logger.warn('Could not get analyser:', err);
     return null;
   }
 }
@@ -84,10 +85,10 @@ export async function initAudio() {
     // Load default drum samples
     await samples('github:tidalcycles/dirt-samples');
     audioInitialized = true;
-    console.log('[MusicLab] Audio initialized');
+    logger.log('Audio initialized');
     return true;
   } catch (err) {
-    console.error('[MusicLab] Failed to initialize audio:', err);
+    logger.error('Failed to initialize audio:', err);
     return false;
   }
 }
@@ -97,7 +98,7 @@ export function createRepl() {
 
   repl = webaudioRepl({});
 
-  console.log('[MusicLab] REPL created');
+  logger.log('REPL created');
   return repl;
 }
 
@@ -140,7 +141,7 @@ function buildLayerPattern(layer) {
 
     return pattern;
   } catch (err) {
-    console.error(`[MusicLab] Error building pattern for layer:`, err);
+    logger.error('Error building pattern for layer:', err);
     return null;
   }
 }
@@ -193,7 +194,7 @@ function updatePattern() {
       return true;
     }
   } catch (err) {
-    console.error('[MusicLab] Pattern update error:', err);
+    logger.error('Pattern update error:', err);
     return false;
   }
 }
@@ -246,10 +247,10 @@ export async function evaluate(code, bpm = 120) {
       return { success: false, error: 'Failed to update pattern' };
     }
 
-    console.log('[MusicLab] Pattern evaluated');
+    logger.log('Pattern evaluated');
     return { success: true };
   } catch (err) {
-    console.error('[MusicLab] Evaluation error:', err);
+    logger.error('Evaluation error:', err);
     return { success: false, error: err.message };
   }
 }
@@ -271,10 +272,10 @@ export async function evaluateLayers(layers, bpm = 120) {
       return { success: false, error: 'Failed to update pattern' };
     }
 
-    console.log('[MusicLab] Layers evaluated:', layers.length);
+    logger.log('Layers evaluated:', layers.length);
     return { success: true };
   } catch (err) {
-    console.error('[MusicLab] Evaluation error:', err);
+    logger.error('Evaluation error:', err);
     return { success: false, error: err.message };
   }
 }
@@ -283,7 +284,7 @@ export function start() {
   if (repl) {
     const { scheduler } = repl;
     scheduler.start();
-    console.log('[MusicLab] Started');
+    logger.log('Started');
   }
 }
 
@@ -291,7 +292,7 @@ export function stop() {
   if (repl) {
     const { scheduler } = repl;
     scheduler.stop();
-    console.log('[MusicLab] Stopped');
+    logger.log('Stopped');
   }
 }
 
@@ -358,17 +359,17 @@ export async function startPreview(code, bpm = 120, swing = 0) {
         const swingAmount = swing / 100 * 0.5;
         pattern = pattern.swing(swingAmount);
       } catch (e) {
-        console.warn('[MusicLab] Swing not supported:', e);
+        logger.warn('Swing not supported:', e);
       }
     }
 
     scheduler.setPattern(pattern);
     scheduler.start();
 
-    console.log('[MusicLab] Preview started:', code, swing > 0 ? `swing:${swing}%` : '');
+    logger.log('Preview started:', code, swing > 0 ? `swing:${swing}%` : '');
     return { success: true };
   } catch (err) {
-    console.error('[MusicLab] Preview error:', err);
+    logger.error('Preview error:', err);
     isPreviewMode = false;
     return { success: false, error: err.message };
   }
@@ -397,10 +398,10 @@ export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120
     scheduler.setPattern(pattern);
     scheduler.start();
 
-    console.log('[MusicLab] Melodic preview started:', notePattern, synth);
+    logger.log('Melodic preview started:', notePattern, synth);
     return { success: true };
   } catch (err) {
-    console.error('[MusicLab] Melodic preview error:', err);
+    logger.error('Melodic preview error:', err);
     isPreviewMode = false;
     return { success: false, error: err.message };
   }
@@ -420,9 +421,9 @@ export function stopPreview() {
     savedLayers = null;
     isPreviewMode = false;
 
-    console.log('[MusicLab] Preview stopped');
+    logger.log('Preview stopped');
   } catch (err) {
-    console.error('[MusicLab] Stop preview error:', err);
+    logger.error('Stop preview error:', err);
   }
 }
 
@@ -460,7 +461,7 @@ export function setupRecording() {
   try {
     const ctx = getAudioContext();
     if (!ctx || !analyserNode) {
-      console.warn('[MusicLab] Cannot setup recording: audio not initialized');
+      logger.warn('Cannot setup recording: audio not initialized');
       return false;
     }
 
@@ -471,10 +472,10 @@ export function setupRecording() {
     analyserNode.connect(mediaStreamDest);
 
     recordingSetup = true;
-    console.log('[MusicLab] Recording infrastructure ready');
+    logger.log('Recording infrastructure ready');
     return true;
   } catch (err) {
-    console.error('[MusicLab] Failed to setup recording:', err);
+    logger.error('Failed to setup recording:', err);
     return false;
   }
 }
@@ -506,15 +507,15 @@ export function startRecording() {
     };
 
     mediaRecorder.onerror = (e) => {
-      console.error('[MusicLab] Recording error:', e);
+      logger.error('Recording error:', e);
     };
 
     // Start recording with 100ms chunks for memory efficiency
     mediaRecorder.start(100);
-    console.log('[MusicLab] Recording started');
+    logger.log('Recording started');
     return true;
   } catch (err) {
-    console.error('[MusicLab] Failed to start recording:', err);
+    logger.error('Failed to start recording:', err);
     return false;
   }
 }
@@ -532,10 +533,10 @@ export function stopRecording() {
         const mimeType = mediaRecorder.mimeType || 'audio/webm';
         const blob = new Blob(recordedChunks, { type: mimeType });
         recordedChunks = [];
-        console.log('[MusicLab] Recording stopped, blob size:', blob.size);
+        logger.log('Recording stopped, blob size:', blob.size);
         resolve(blob);
       } catch (err) {
-        console.error('[MusicLab] Failed to create recording blob:', err);
+        logger.error('Failed to create recording blob:', err);
         reject(err);
       }
     };
@@ -565,7 +566,7 @@ export async function convertToWav(blob) {
     await ctx.close();
     return wavBlob;
   } catch (err) {
-    console.error('[MusicLab] Failed to convert to WAV:', err);
+    logger.error('Failed to convert to WAV:', err);
     throw err;
   }
 }

@@ -1,19 +1,47 @@
 {
   "name": "musiclab",
   "version": "1.0.0",
-  "description": "Web interface for Strudel live coding",
-  "private": true,
+  "description": "Web-based music production environment with live coding and visual sequencers, built on Strudel",
+  "private": false,
   "type": "module",
+  "keywords": [
+    "music",
+    "audio",
+    "live-coding",
+    "strudel",
+    "tidalcycles",
+    "sequencer",
+    "drum-machine",
+    "synthesizer",
+    "daw",
+    "web-audio",
+    "music-production",
+    "beat-maker"
+  ],
+  "author": "MusicLab Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/musiclab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/musiclab/issues"
+  },
+  "homepage": "https://github.com/yourusername/musiclab#readme",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "node server/index.js",
     "dev:client": "npm run dev --workspace=client",
-    "build": "npm run build --workspace=client"
+    "build": "npm run build --workspace=client",
+    "preview": "npm run preview --workspace=client"
   },
   "workspaces": [
     "client"
   ],
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

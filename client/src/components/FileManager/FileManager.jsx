@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { FilePlus, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../../store';
+import logger from '../../utils/logger';
 
 export default function FileManager() {
   const fileInputRef = useRef(null);
@@ -93,7 +94,7 @@ export default function FileManager() {
         setCurrentPattern(pattern);
         alert(`Composicion "${composition.name}" importada con ${composition.layers.length} capas`);
       } catch (err) {
-        console.error('Import error:', err);
+        logger.error('Import error:', err);
         alert('Error al importar: ' + err.message);
       }
     };
