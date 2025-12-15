@@ -549,7 +549,7 @@ export default function StepSequencer({ isOpen, onClose }) {
       color,
       muted: false,
       solo: false,
-      height: 80,
+      height: 100,
       params: {
         gain: 0.8, cutoff: 8000, resonance: 0, speed: 1, pan: 0,
         reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,

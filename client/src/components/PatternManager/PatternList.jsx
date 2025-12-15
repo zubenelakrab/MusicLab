@@ -47,17 +47,27 @@ export default function PatternList() {
 
   const handleSave = async (formData) => {
     try {
-      // Get current layer code for saving
-      const currentLayer = currentPattern.layers?.[selectedLayerIndex];
-      const code = currentLayer?.code || '';
+      // Get code from the editing clip or first track's first clip
+      const editingClip = useStore.getState().editingClip;
+      let code = '';
+      let params = { gain: 0.8, cutoff: 8000, resonance: 0, speed: 1, pan: 0 };
+
+      if (editingClip) {
+        const track = arrangement.tracks.find(t => t.id === editingClip.trackId);
+        const clip = track?.clips.find(c => c.id === editingClip.clipId);
+        if (clip?.layers?.[0]) {
+          code = clip.layers[0].code || '';
+          params = clip.layers[0].params || params;
+        }
+      }
 
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          code: code,
-          params: currentLayer?.params || currentPattern.params,
+          code,
+          params,
         }),
       });
       const newPattern = await res.json();
@@ -91,7 +101,7 @@ export default function PatternList() {
       color,
       muted: false,
       solo: false,
-      height: 80,
+      height: 100,
       params: {
         gain: 0.8,
         cutoff: 8000,
