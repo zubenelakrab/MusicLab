@@ -58,7 +58,7 @@ export default function App() {
             <button
               onClick={() => setShowVisualizer(true)}
               className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1.5"
-              title="Abrir Visualizer"
+              title="Open Visualizer"
             >
               <Sparkles size={14} />
               <span>Visualizer</span>
@@ -66,7 +66,7 @@ export default function App() {
           </div>
         </div>
         <span className="text-sm text-gray-500">
-          {currentPattern.name || 'Untitled'} - {currentPattern.layers?.length || 1} capas
+          {currentPattern.name || 'Untitled'} - {currentPattern.layers?.length || 1} layers
         </span>
       </header>
 

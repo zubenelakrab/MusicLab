@@ -10,98 +10,98 @@ const OPERATORS = [
   {
     symbol: '*',
     label: 'x N',
-    title: 'Multiplicar / Repetir',
-    desc: 'Repite el sonido N veces en el mismo tiempo. Mas rapido.',
+    title: 'Multiply / Repeat',
+    desc: 'Repeats the sound N times in the same time. Faster.',
     example: 'bd*4',
-    result: 'Suena: bd bd bd bd (4 kicks en 1 ciclo)',
+    result: 'Sounds: bd bd bd bd (4 kicks in 1 cycle)',
   },
   {
     symbol: '/',
     label: '/ N',
-    title: 'Dividir / Ralentizar',
-    desc: 'El sonido ocupa N ciclos. Mas lento.',
+    title: 'Divide / Slow Down',
+    desc: 'The sound spans N cycles. Slower.',
     example: 'bd/2',
-    result: 'El kick suena cada 2 ciclos (la mitad de velocidad)',
+    result: 'The kick sounds every 2 cycles (half speed)',
   },
   {
     symbol: ' ',
-    label: 'espacio',
-    title: 'Secuencia',
-    desc: 'Los sonidos van uno despues del otro.',
+    label: 'space',
+    title: 'Sequence',
+    desc: 'Sounds play one after another.',
     example: 'bd sd hh',
-    result: 'Primero kick, luego snare, luego hi-hat',
+    result: 'First kick, then snare, then hi-hat',
   },
   {
     symbol: ',',
     label: ',',
-    title: 'Paralelo / Juntos',
-    desc: 'Los sonidos suenan AL MISMO TIEMPO (capas).',
+    title: 'Parallel / Together',
+    desc: 'Sounds play AT THE SAME TIME (layers).',
     example: 'bd, hh*4',
-    result: 'Kick Y hi-hats suenan juntos simultaneamente',
+    result: 'Kick AND hi-hats play together simultaneously',
   },
   {
     symbol: '~',
     label: '~',
-    title: 'Silencio / Pausa',
-    desc: 'Un espacio vacio donde no suena nada.',
+    title: 'Rest / Pause',
+    desc: 'An empty space where nothing plays.',
     example: 'bd ~ sd ~',
-    result: 'kick, silencio, snare, silencio',
+    result: 'kick, rest, snare, rest',
   },
   {
     symbol: '[]',
     label: '[ ]',
-    title: 'Agrupar',
-    desc: 'Agrupa sonidos para que ocupen UN solo tiempo.',
+    title: 'Group',
+    desc: 'Groups sounds to occupy ONE single beat.',
     example: '[bd sd] hh',
-    result: 'bd+sd rapidos en tiempo 1, hh en tiempo 2',
+    result: 'bd+sd fast in beat 1, hh in beat 2',
   },
   {
     symbol: '<>',
     label: '< >',
-    title: 'Alternar por Ciclo',
-    desc: 'Cada ciclo usa un elemento diferente. Rota.',
+    title: 'Alternate per Cycle',
+    desc: 'Each cycle uses a different element. Rotates.',
     example: '<bd sd>',
-    result: 'Ciclo 1: bd, Ciclo 2: sd, Ciclo 3: bd...',
+    result: 'Cycle 1: bd, Cycle 2: sd, Cycle 3: bd...',
   },
   {
     symbol: '?',
     label: '?',
-    title: 'Aleatorio 50%',
-    desc: 'El sonido tiene 50% probabilidad de sonar.',
+    title: 'Random 50%',
+    desc: 'The sound has 50% probability of playing.',
     example: 'hh?',
-    result: 'A veces suena el hi-hat, a veces no',
+    result: 'Sometimes the hi-hat plays, sometimes not',
   },
   {
     symbol: '|',
     label: '|',
-    title: 'Elegir Uno',
-    desc: 'Elige aleatoriamente UNO de los sonidos.',
+    title: 'Choose One',
+    desc: 'Randomly chooses ONE of the sounds.',
     example: 'bd|sd|hh',
-    result: 'Cada vez suena kick O snare O hi-hat',
+    result: 'Each time plays kick OR snare OR hi-hat',
   },
   {
     symbol: '@',
     label: '@N',
-    title: 'Extender Duracion',
-    desc: 'El sonido ocupa N espacios (sin repetir).',
+    title: 'Extend Duration',
+    desc: 'The sound occupies N spaces (without repeating).',
     example: 'bd@2 sd',
-    result: 'Kick largo (2 tiempos), snare (1 tiempo)',
+    result: 'Long kick (2 beats), snare (1 beat)',
   },
   {
     symbol: '!',
     label: '!N',
-    title: 'Replicar',
-    desc: 'Repite N veces SIN acelerar (ocupa mas espacio).',
+    title: 'Replicate',
+    desc: 'Repeats N times WITHOUT speeding up (takes more space).',
     example: 'bd!3',
-    result: 'bd bd bd (3 kicks, cada uno ocupa su tiempo)',
+    result: 'bd bd bd (3 kicks, each takes its own time)',
   },
   {
     symbol: '()',
     label: '(n,k)',
-    title: 'Ritmo Euclidiano',
-    desc: 'Distribuye N golpes en K pasos matematicamente.',
+    title: 'Euclidean Rhythm',
+    desc: 'Distributes N hits across K steps mathematically.',
     example: 'bd(3,8)',
-    result: '3 kicks distribuidos en 8 pasos: X..X..X.',
+    result: '3 kicks distributed in 8 steps: X..X..X.',
   },
 ];
 
@@ -379,7 +379,7 @@ export default function SamplePad() {
           <div className="flex flex-col">
             <span className="text-sm text-gray-400">Samples</span>
             <span className="text-xs text-gray-500">
-              {hasEditingClip ? 'Click para agregar al clip' : 'Selecciona un clip primero'}
+              {hasEditingClip ? 'Click to add to clip' : 'Select a clip first'}
             </span>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function SamplePad() {
           <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Buscar sample..."
+            placeholder="Search sample..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-7 pr-2 py-1 text-sm bg-studio-800 border border-studio-600 rounded text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
@@ -401,10 +401,10 @@ export default function SamplePad() {
         {filteredSamples ? (
           <div>
             <h4 className="text-xs text-gray-500 uppercase mb-2">
-              Resultados ({filteredSamples.length})
+              Results ({filteredSamples.length})
             </h4>
             {filteredSamples.length === 0 ? (
-              <p className="text-xs text-gray-600">No encontrado</p>
+              <p className="text-xs text-gray-600">Not found</p>
             ) : (
               <div className="grid grid-cols-3 gap-1 max-h-96 overflow-y-auto">
                 {filteredSamples.map((sample) => (

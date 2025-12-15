@@ -845,7 +845,7 @@ export default function StepSequencer({ isOpen, onClose }) {
                 className="mt-2 px-3 py-1 text-xs bg-studio-700 text-gray-400 rounded hover:bg-studio-600 hover:text-white flex items-center gap-1"
               >
                 <Plus size={12} />
-                Agregar sonido
+                Add sound
               </button>
             )}
           </div>
@@ -855,7 +855,7 @@ export default function StepSequencer({ isOpen, onClose }) {
         <div className="border-t border-studio-600 bg-studio-700 p-3">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <div className="text-xs text-gray-400 mb-1">Codigo generado:</div>
+              <div className="text-xs text-gray-400 mb-1">Generated code:</div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 px-3 py-2 bg-studio-900 rounded text-accent-tertiary font-mono text-xs overflow-x-auto max-h-16">
                   {previewCode}
@@ -874,7 +874,7 @@ export default function StepSequencer({ isOpen, onClose }) {
               className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 flex items-center gap-2"
             >
               <Plus size={16} />
-              Crear Track
+              Create Track
             </button>
           </div>
         </div>

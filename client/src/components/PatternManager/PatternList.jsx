@@ -161,12 +161,12 @@ export default function PatternList() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
-        <span className="text-sm text-gray-400">Libreria</span>
+        <span className="text-sm text-gray-400">Library</span>
         <button
           onClick={() => setShowForm(!showForm)}
           className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400"
         >
-          + Guardar
+          + Save
         </button>
       </div>
 
@@ -179,9 +179,9 @@ export default function PatternList() {
         )}
 
         {loading ? (
-          <p className="text-sm text-gray-500 text-center py-4">Cargando...</p>
+          <p className="text-sm text-gray-500 text-center py-4">Loading...</p>
         ) : patterns.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">No hay patrones guardados</p>
+          <p className="text-sm text-gray-500 text-center py-4">No saved patterns</p>
         ) : (
           patterns.map((pattern) => (
             <PatternCard
@@ -198,7 +198,7 @@ export default function PatternList() {
 
       <div className="px-3 py-2 bg-studio-700 border-t border-studio-600">
         <p className="text-xs text-gray-500">
-          "+ Track" agrega un nuevo track
+          "+ Track" adds a new track
         </p>
       </div>
     </div>

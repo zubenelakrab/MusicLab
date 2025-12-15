@@ -169,7 +169,7 @@ export default function CodeEditor() {
           <span className="text-sm text-gray-400">Editor</span>
         )}
         <span className="text-xs text-gray-500">
-          {isPlaying ? 'En vivo' : 'Tab para autocompletar'}
+          {isPlaying ? 'Live' : 'Tab to autocomplete'}
         </span>
       </div>
 
@@ -185,8 +185,8 @@ export default function CodeEditor() {
         {!hasClip && (
           <div className="absolute inset-0 flex items-center justify-center bg-studio-900">
             <div className="text-center text-gray-500">
-              <p className="text-sm">Selecciona un clip para editar</p>
-              <p className="text-xs mt-1">Click en un clip del timeline</p>
+              <p className="text-sm">Select a clip to edit</p>
+              <p className="text-xs mt-1">Click on a clip in the timeline</p>
             </div>
           </div>
         )}

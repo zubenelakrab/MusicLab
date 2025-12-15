@@ -104,7 +104,7 @@ export default function FileManager() {
               })),
             },
           });
-          alert(`Proyecto "${composition.name}" importado con ${arr.tracks.length} tracks`);
+          alert(`Project "${composition.name}" imported with ${arr.tracks.length} tracks`);
           return;
         }
 
@@ -147,14 +147,14 @@ export default function FileManager() {
               tracks,
             },
           });
-          alert(`Composicion legacy "${composition.name}" importada como ${tracks.length} tracks`);
+          alert(`Legacy composition "${composition.name}" imported as ${tracks.length} tracks`);
           return;
         }
 
-        alert('Archivo invalido: formato no reconocido');
+        alert('Invalid file: unrecognized format');
       } catch (err) {
         logger.error('Import error:', err);
-        alert('Error al importar: ' + err.message);
+        alert('Import error: ' + err.message);
       }
     };
 
@@ -170,7 +170,7 @@ export default function FileManager() {
     );
 
     if (hasContent) {
-      if (!confirm('Tienes cambios sin guardar. ¿Crear nuevo proyecto?')) {
+      if (!confirm('You have unsaved changes. Create new project?')) {
         return;
       }
     }
@@ -204,30 +204,30 @@ export default function FileManager() {
       <button
         onClick={handleNew}
         className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
-        title="Nueva composicion"
+        title="New composition"
       >
         <FilePlus size={14} />
-        <span>Nuevo</span>
+        <span>New</span>
       </button>
 
       {/* Import button */}
       <button
         onClick={() => fileInputRef.current?.click()}
         className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
-        title="Importar composicion (.json)"
+        title="Import composition (.json)"
       >
         <FolderOpen size={14} />
-        <span>Abrir</span>
+        <span>Open</span>
       </button>
 
       {/* Export button */}
       <button
         onClick={handleExport}
         className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors flex items-center gap-1"
-        title="Exportar composicion como JSON"
+        title="Export composition as JSON"
       >
         <Save size={14} />
-        <span>Guardar</span>
+        <span>Save</span>
       </button>
     </div>
   );

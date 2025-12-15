@@ -33,7 +33,7 @@ export default function PatternCard({ pattern, onAddAsTrack, onReplace, onDelete
             onDelete(pattern.id);
           }}
           className="text-gray-500 hover:text-red-400 text-xs px-1"
-          title="Eliminar"
+          title="Delete"
         >
           x
         </button>
@@ -57,21 +57,21 @@ export default function PatternCard({ pattern, onAddAsTrack, onReplace, onDelete
         <button
           onClick={() => onAddAsTrack(pattern)}
           className="flex-1 px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors"
-          title="Agregar como nuevo track"
+          title="Add as new track"
         >
           + Track
         </button>
         <button
           onClick={() => onReplace(pattern)}
           className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors"
-          title="Reemplazar todo"
+          title="Load pattern"
         >
-          Cargar
+          Load
         </button>
       </div>
 
       <p className="text-[10px] text-gray-600 mt-1 text-center">
-        Arrastra al timeline para crear clip
+        Drag to timeline to create clip
       </p>
     </div>
   );

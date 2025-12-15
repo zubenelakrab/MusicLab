@@ -622,7 +622,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
               className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 flex items-center gap-2"
             >
               <Plus size={16} />
-              Crear Track
+              Create Track
             </button>
           </div>
         </div>

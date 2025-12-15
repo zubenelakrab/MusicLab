@@ -209,7 +209,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Buscar samples..."
+                  placeholder="Search samples..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-studio-700 border border-studio-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
@@ -221,7 +221,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
             <div className="flex-1 overflow-y-auto p-4">
               {filteredSamples.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-500">
-                  No se encontraron samples
+                  No samples found
                 </div>
               ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-6 gap-2">

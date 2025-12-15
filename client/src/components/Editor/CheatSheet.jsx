@@ -3,145 +3,145 @@ import { ChevronDown, ChevronRight, BookOpen, Check } from 'lucide-react';
 
 const SECTIONS = [
   {
-    title: 'Básico',
+    title: 'Basic',
     items: [
-      { pattern: 'bd', desc: 'Un solo sonido (kick)' },
-      { pattern: 'bd sd', desc: 'Secuencia: kick, snare' },
-      { pattern: 'bd sd hh cp', desc: 'Secuencia de 4 sonidos' },
+      { pattern: 'bd', desc: 'Single sound (kick)' },
+      { pattern: 'bd sd', desc: 'Sequence: kick, snare' },
+      { pattern: 'bd sd hh cp', desc: 'Sequence of 4 sounds' },
     ]
   },
   {
-    title: 'Repetición (*)',
+    title: 'Repetition (*)',
     items: [
-      { pattern: 'bd*4', desc: 'Kick 4 veces por ciclo' },
-      { pattern: 'hh*8', desc: 'Hi-hat 8 veces (rápido)' },
-      { pattern: '[bd sd]*2', desc: 'Grupo repetido 2 veces' },
-      { pattern: 'bd*2 sd*2', desc: '2 kicks, luego 2 snares' },
+      { pattern: 'bd*4', desc: 'Kick 4 times per cycle' },
+      { pattern: 'hh*8', desc: 'Hi-hat 8 times (fast)' },
+      { pattern: '[bd sd]*2', desc: 'Group repeated 2 times' },
+      { pattern: 'bd*2 sd*2', desc: '2 kicks, then 2 snares' },
     ]
   },
   {
-    title: 'División (/)',
+    title: 'Division (/)',
     items: [
-      { pattern: 'bd/2', desc: 'Kick cada 2 ciclos' },
-      { pattern: '[bd sd hh]/2', desc: 'Secuencia lenta (2 ciclos)' },
-      { pattern: 'bd sd/2', desc: 'Kick normal, snare lento' },
+      { pattern: 'bd/2', desc: 'Kick every 2 cycles' },
+      { pattern: '[bd sd hh]/2', desc: 'Slow sequence (2 cycles)' },
+      { pattern: 'bd sd/2', desc: 'Normal kick, slow snare' },
     ]
   },
   {
-    title: 'Agrupación [ ]',
+    title: 'Grouping [ ]',
     items: [
-      { pattern: '[bd sd] hh', desc: 'Grupo rápido + hi-hat' },
-      { pattern: '[bd sd hh] cp', desc: '3 rápidos + clap' },
-      { pattern: '[[bd bd] sd] hh', desc: 'Grupos anidados' },
-      { pattern: 'bd [sd sd] bd sd', desc: 'Subdivisión interna' },
+      { pattern: '[bd sd] hh', desc: 'Fast group + hi-hat' },
+      { pattern: '[bd sd hh] cp', desc: '3 fast + clap' },
+      { pattern: '[[bd bd] sd] hh', desc: 'Nested groups' },
+      { pattern: 'bd [sd sd] bd sd', desc: 'Internal subdivision' },
     ]
   },
   {
-    title: 'Paralelo (,) - Poliritmo',
+    title: 'Parallel (,) - Polyrhythm',
     items: [
-      { pattern: 'bd, hh*2', desc: 'Kick Y hi-hat juntos' },
+      { pattern: 'bd, hh*2', desc: 'Kick AND hi-hat together' },
       { pattern: '[bd sd, hh*4]', desc: 'Beat + hi-hats' },
-      { pattern: 'bd*3, hh*4', desc: 'Poliritmo 3 contra 4' },
-      { pattern: 'bd, sd, hh', desc: '3 capas simultáneas' },
+      { pattern: 'bd*3, hh*4', desc: 'Polyrhythm 3 against 4' },
+      { pattern: 'bd, sd, hh', desc: '3 simultaneous layers' },
     ]
   },
   {
-    title: 'Alternancia < >',
+    title: 'Alternation < >',
     items: [
-      { pattern: '<bd sd>', desc: 'Alterna cada ciclo' },
-      { pattern: '<bd sd hh>', desc: 'Rota entre 3 (ciclo 1→2→3)' },
-      { pattern: 'bd <sd cp>', desc: 'Kick fijo, snare/clap alterna' },
-      { pattern: '<bd*2 bd*4>', desc: 'Alterna patrones diferentes' },
+      { pattern: '<bd sd>', desc: 'Alternates each cycle' },
+      { pattern: '<bd sd hh>', desc: 'Rotates between 3 (cycle 1→2→3)' },
+      { pattern: 'bd <sd cp>', desc: 'Fixed kick, snare/clap alternates' },
+      { pattern: '<bd*2 bd*4>', desc: 'Alternates different patterns' },
     ]
   },
   {
-    title: 'Silencios (~)',
+    title: 'Rests (~)',
     items: [
-      { pattern: 'bd ~ sd ~', desc: 'Silencios entre golpes' },
-      { pattern: '~ sd', desc: 'Silencio, luego snare' },
-      { pattern: 'bd ~ ~ sd', desc: 'Kick...pausa larga...snare' },
+      { pattern: 'bd ~ sd ~', desc: 'Rests between hits' },
+      { pattern: '~ sd', desc: 'Rest, then snare' },
+      { pattern: 'bd ~ ~ sd', desc: 'Kick...long pause...snare' },
       { pattern: '[bd ~] [~ sd]', desc: 'Offbeat pattern' },
     ]
   },
   {
-    title: 'Aleatorio (? |)',
+    title: 'Random (? |)',
     items: [
-      { pattern: 'hh?', desc: 'Hi-hat 50% probabilidad' },
-      { pattern: 'bd sd? hh cp?', desc: 'Algunos aleatorios' },
-      { pattern: 'bd | sd | hh', desc: 'Elige uno al azar' },
-      { pattern: '[bd | cp] sd', desc: 'Kick o clap aleatorio' },
+      { pattern: 'hh?', desc: 'Hi-hat 50% probability' },
+      { pattern: 'bd sd? hh cp?', desc: 'Some random' },
+      { pattern: 'bd | sd | hh', desc: 'Choose one randomly' },
+      { pattern: '[bd | cp] sd', desc: 'Random kick or clap' },
     ]
   },
   {
-    title: 'Elongación (@)',
+    title: 'Elongation (@)',
     items: [
-      { pattern: 'bd@2 sd', desc: 'Kick dura 2 tiempos' },
-      { pattern: 'bd@3 sd', desc: 'Kick dura 3/4 del ciclo' },
-      { pattern: 'bd sd@2 hh', desc: 'Snare extendido' },
-      { pattern: 'arpy@4', desc: 'Sample largo (4 tiempos)' },
+      { pattern: 'bd@2 sd', desc: 'Kick lasts 2 beats' },
+      { pattern: 'bd@3 sd', desc: 'Kick lasts 3/4 of cycle' },
+      { pattern: 'bd sd@2 hh', desc: 'Extended snare' },
+      { pattern: 'arpy@4', desc: 'Long sample (4 beats)' },
     ]
   },
   {
-    title: 'Replicación (!)',
+    title: 'Replication (!)',
     items: [
-      { pattern: 'bd!3 sd', desc: 'bd bd bd sd (sin acelerar)' },
-      { pattern: 'hh!4', desc: '4 hi-hats mismo tiempo' },
-      { pattern: 'bd sd!2 hh', desc: 'sd duplicado sin acelerar' },
+      { pattern: 'bd!3 sd', desc: 'bd bd bd sd (no speedup)' },
+      { pattern: 'hh!4', desc: '4 hi-hats same timing' },
+      { pattern: 'bd sd!2 hh', desc: 'Duplicated sd no speedup' },
     ]
   },
   {
-    title: 'Ritmos Euclidianos',
+    title: 'Euclidean Rhythms',
     items: [
-      { pattern: 'bd(3,8)', desc: '3 golpes en 8 pasos' },
-      { pattern: 'bd(5,8)', desc: '5 golpes en 8 (cinquillo)' },
-      { pattern: 'hh(7,16)', desc: '7 en 16 (complejo)' },
-      { pattern: 'bd(3,8) sd(2,8)', desc: 'Dos ritmos euclidianos' },
-      { pattern: '[bd(3,8), hh(5,8)]', desc: 'Poliritmo euclidiano' },
+      { pattern: 'bd(3,8)', desc: '3 hits in 8 steps' },
+      { pattern: 'bd(5,8)', desc: '5 hits in 8 (cinquillo)' },
+      { pattern: 'hh(7,16)', desc: '7 in 16 (complex)' },
+      { pattern: 'bd(3,8) sd(2,8)', desc: 'Two euclidean rhythms' },
+      { pattern: '[bd(3,8), hh(5,8)]', desc: 'Euclidean polyrhythm' },
     ]
   },
   {
     title: 'House / Techno',
     items: [
-      { pattern: '[bd, hh*4, ~ sd ~ sd]', desc: 'House clásico 4/4' },
-      { pattern: '[bd, hh*8, ~ ~ sd ~]', desc: 'Techno básico' },
-      { pattern: '[bd*2, hh*4, [~ sd]*2]', desc: 'House con kick doble' },
-      { pattern: '[bd, ho*2, ~ sd]', desc: 'House con open hat' },
+      { pattern: '[bd, hh*4, ~ sd ~ sd]', desc: 'Classic house 4/4' },
+      { pattern: '[bd, hh*8, ~ ~ sd ~]', desc: 'Basic techno' },
+      { pattern: '[bd*2, hh*4, [~ sd]*2]', desc: 'House with double kick' },
+      { pattern: '[bd, ho*2, ~ sd]', desc: 'House with open hat' },
       { pattern: 'bd [~ bd] sd [bd ~]', desc: 'Offbeat house' },
     ]
   },
   {
     title: 'Breakbeat / Jungle',
     items: [
-      { pattern: 'bd [~ bd] [sd ~] bd', desc: 'Breakbeat básico' },
-      { pattern: '[bd ~ sd bd] [~ sd ~ bd]', desc: 'Amen break simplificado' },
+      { pattern: 'bd [~ bd] [sd ~] bd', desc: 'Basic breakbeat' },
+      { pattern: '[bd ~ sd bd] [~ sd ~ bd]', desc: 'Simplified amen break' },
       { pattern: 'bd [~ [bd bd]] sd [bd ~]', desc: 'Jungle pattern' },
-      { pattern: '[bd, hh*8] [sd, hh*8]', desc: 'Break con hats rápidos' },
+      { pattern: '[bd, hh*8] [sd, hh*8]', desc: 'Break with fast hats' },
     ]
   },
   {
     title: 'Funk / Hip-Hop',
     items: [
-      { pattern: 'bd ~ [~ bd] sd', desc: 'Boom bap básico' },
+      { pattern: 'bd ~ [~ bd] sd', desc: 'Basic boom bap' },
       { pattern: 'bd ~ sd [~ bd]', desc: 'Hip-hop groove' },
-      { pattern: '[bd ~ ~ bd] [~ sd ~ ~]', desc: 'Funk sincopado' },
+      { pattern: '[bd ~ ~ bd] [~ sd ~ ~]', desc: 'Syncopated funk' },
       { pattern: 'bd*2 [~ sd] bd [sd ~]', desc: 'Funk groove' },
     ]
   },
   {
-    title: 'Experimentales',
+    title: 'Experimental',
     items: [
-      { pattern: 'bd*<3 4 5>', desc: 'Multiplicador cambiante' },
-      { pattern: '[bd sd]/<2 3>', desc: 'División alternante' },
-      { pattern: '<[bd sd] [bd bd sd]>', desc: 'Patrones alternantes' },
-      { pattern: 'bd(3,8), sd(5,8,2)', desc: 'Euclidianos desfasados' },
-      { pattern: '[bd?, sd?, hh?]*4', desc: 'Secuencia probabilística' },
+      { pattern: 'bd*<3 4 5>', desc: 'Changing multiplier' },
+      { pattern: '[bd sd]/<2 3>', desc: 'Alternating division' },
+      { pattern: '<[bd sd] [bd bd sd]>', desc: 'Alternating patterns' },
+      { pattern: 'bd(3,8), sd(5,8,2)', desc: 'Offset euclideans' },
+      { pattern: '[bd?, sd?, hh?]*4', desc: 'Probabilistic sequence' },
     ]
   },
   {
-    title: 'Samples (usa :n)',
+    title: 'Samples (use :n)',
     items: [
-      { pattern: 'bd:0 bd:1 bd:3', desc: 'Kicks específicos' },
-      { pattern: 'sd:0 sd:1 sd:2', desc: 'Snares específicos' },
+      { pattern: 'bd:0 bd:1 bd:3', desc: 'Specific kicks' },
+      { pattern: 'sd:0 sd:1 sd:2', desc: 'Specific snares' },
       { pattern: 'arpy:0 arpy:1 arpy:2', desc: 'Arpeggio samples' },
       { pattern: 'bass:0 bass:1 bass:2', desc: 'Bass samples' },
       { pattern: 'tabla:0 tabla:1 tabla:2', desc: 'Tabla percussion' },
@@ -195,7 +195,7 @@ export default function CheatSheet() {
                         {copiedIndex === globalIdx ? (
                           <>
                             <Check size={12} className="text-accent-primary" />
-                            Copiado
+                            Copied
                           </>
                         ) : item.desc}
                       </span>
@@ -208,7 +208,7 @@ export default function CheatSheet() {
 
           <div className="pt-2 border-t border-studio-600">
             <p className="text-xs text-gray-500">
-              Haz clic en cualquier patrón para copiarlo al portapapeles
+              Click any pattern to copy it to clipboard
             </p>
           </div>
         </div>

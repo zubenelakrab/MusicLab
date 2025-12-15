@@ -26,7 +26,7 @@ export default function LayerEditor() {
           onClick={() => addLayer()}
           className="text-xs px-2 py-1 bg-accent-primary text-black rounded hover:bg-accent-primary/80 transition-colors"
         >
-          + Agregar
+          + Add
         </button>
       </div>
 
@@ -65,7 +65,7 @@ export default function LayerEditor() {
                   ? 'bg-red-600 text-white'
                   : 'bg-studio-600 text-gray-400 hover:bg-studio-500'
               }`}
-              title="Silenciar capa"
+              title="Mute layer"
             >
               M
             </button>
@@ -81,7 +81,7 @@ export default function LayerEditor() {
                   ? 'bg-yellow-500 text-black'
                   : 'bg-studio-600 text-gray-400 hover:bg-studio-500'
               }`}
-              title="Solo - escuchar solo esta capa"
+              title="Solo - hear only this layer"
             >
               S
             </button>
@@ -94,7 +94,7 @@ export default function LayerEditor() {
                   removeLayer(index);
                 }}
                 className="text-xs px-1.5 py-0.5 rounded bg-studio-600 text-gray-400 hover:bg-red-600 hover:text-white"
-                title="Eliminar capa"
+                title="Delete layer"
               >
                 X
               </button>

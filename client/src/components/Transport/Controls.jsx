@@ -127,7 +127,7 @@ export default function Controls() {
 
       {!audioReady && (
         <span className="text-xs text-yellow-500 flex items-center gap-1">
-          <Play size={12} /> Click para iniciar
+          <Play size={12} /> Click to start
         </span>
       )}
 
