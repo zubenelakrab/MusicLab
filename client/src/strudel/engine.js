@@ -107,7 +107,19 @@ function buildLayerPattern(layer) {
   if (!code || !code.trim()) return null;
 
   try {
-    let pattern = mini(code).s();
+    let pattern;
+
+    // Check if this is a melodic pattern: note("...").sound("...")
+    const melodicMatch = code.match(/^note\("([^"]+)"\)\.sound\("([^"]+)"\)$/);
+    if (melodicMatch) {
+      const notePattern = melodicMatch[1];
+      const synthName = melodicMatch[2];
+      // Build melodic pattern using mini notation with .note() and .s()
+      pattern = mini(notePattern).note().s(synthName);
+    } else {
+      // Standard drum/sample pattern
+      pattern = mini(code).s();
+    }
 
     // Apply layer-specific parameters
     if (params.gain !== undefined && params.gain !== 1) {
@@ -357,6 +369,38 @@ export async function startPreview(code, bpm = 120, swing = 0) {
     return { success: true };
   } catch (err) {
     console.error('[MusicLab] Preview error:', err);
+    isPreviewMode = false;
+    return { success: false, error: err.message };
+  }
+}
+
+// Preview for melodic patterns (notes instead of sounds)
+// Uses dirt-samples that respond to note values
+export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120) {
+  if (!repl) {
+    createRepl();
+  }
+
+  try {
+    // Save current layers
+    savedLayers = [...currentLayers];
+    isPreviewMode = true;
+
+    const cps = bpm / 60 / 4;
+    const { scheduler } = repl;
+    scheduler.setCps(cps);
+
+    // Create melodic pattern: note("c3 e3").s("arpy")
+    // Using .s() which is shorthand for .sound()
+    let pattern = mini(notePattern).note().s(synth);
+
+    scheduler.setPattern(pattern);
+    scheduler.start();
+
+    console.log('[MusicLab] Melodic preview started:', notePattern, synth);
+    return { success: true };
+  } catch (err) {
+    console.error('[MusicLab] Melodic preview error:', err);
     isPreviewMode = false;
     return { success: false, error: err.message };
   }

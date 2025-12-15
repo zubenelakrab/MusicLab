@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Grid3X3 } from 'lucide-react';
+import { Sparkles, Grid3X3, Music } from 'lucide-react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
 import CodeEditor from './components/Editor/CodeEditor';
@@ -9,12 +9,14 @@ import PatternList from './components/PatternManager/PatternList';
 import Timeline from './components/Sequencer/Timeline';
 import Visualizer from './components/Visualizer/Visualizer';
 import StepSequencer from './components/StepSequencer/StepSequencer';
+import MelodicSequencer from './components/MelodicSequencer/MelodicSequencer';
 import { useStore } from './store';
 
 export default function App() {
   const { currentPattern } = useStore();
   const [showVisualizer, setShowVisualizer] = useState(false);
   const [showSequencer, setShowSequencer] = useState(false);
+  const [showMelodic, setShowMelodic] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-studio-900">
@@ -30,10 +32,18 @@ export default function App() {
             <button
               onClick={() => setShowSequencer(true)}
               className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors flex items-center gap-1.5"
-              title="Step Sequencer"
+              title="Step Sequencer (Drums)"
             >
               <Grid3X3 size={14} />
-              <span>Sequencer</span>
+              <span>Drums</span>
+            </button>
+            <button
+              onClick={() => setShowMelodic(true)}
+              className="px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-500 transition-colors flex items-center gap-1.5"
+              title="Melodic Sequencer"
+            >
+              <Music size={14} />
+              <span>Melodic</span>
             </button>
             <button
               onClick={() => setShowVisualizer(true)}
@@ -53,6 +63,7 @@ export default function App() {
       {/* Modals */}
       <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
       <StepSequencer isOpen={showSequencer} onClose={() => setShowSequencer(false)} />
+      <MelodicSequencer isOpen={showMelodic} onClose={() => setShowMelodic(false)} />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar - Pattern Library */}
