@@ -165,7 +165,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                     : 'text-gray-300 hover:bg-studio-600'
                 }`}
               >
-                Todos ({ALL_SAMPLE_NAMES.length})
+                All ({ALL_SAMPLE_NAMES.length})
               </button>
               {categories.map(([category, samples]) => (
                 <button
@@ -187,7 +187,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
             {/* Recent samples */}
             {recentSamples.length > 0 && (
               <div className="border-t border-studio-600 p-2">
-                <h4 className="text-xs text-gray-500 uppercase mb-2 px-3">Recientes</h4>
+                <h4 className="text-xs text-gray-500 uppercase mb-2 px-3">Recent</h4>
                 {recentSamples.map((sample) => (
                   <button
                     key={sample}
@@ -292,14 +292,14 @@ export default function SampleBrowser({ isOpen, onClose }) {
                             onClick={() => handleSelectSample(sample)}
                             className="text-xs px-2 py-1 bg-blue-500/30 text-blue-300 rounded hover:bg-blue-500/50"
                           >
-                            {variantCount} variantes
+                            {variantCount} variants
                           </button>
                         )}
                         <button
                           onClick={() => handleInsert(sample)}
                           className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400"
                         >
-                          Insertar
+                          Insert
                         </button>
                       </div>
                     );
@@ -327,14 +327,14 @@ export default function SampleBrowser({ isOpen, onClose }) {
                   </button>
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {getVariantCount(selectedSample)} variantes disponibles
+                  {getVariantCount(selectedSample)} variants available
                 </div>
               </div>
 
               {/* Variant slider */}
               <div className="px-4 py-3 border-b border-studio-600">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs text-gray-400">Variante:</span>
+                  <span className="text-xs text-gray-400">Variant:</span>
                   <span className="text-sm text-accent-primary font-mono">
                     {selectedSample}:{selectedVariant}
                   </span>
@@ -360,7 +360,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                     className="flex-1 px-3 py-2 text-sm bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center justify-center gap-1"
                   >
                     <ChevronRight size={14} />
-                    Insertar
+                    Insert
                   </button>
                 </div>
               </div>
@@ -389,7 +389,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                               : 'bg-studio-600 text-gray-300 hover:bg-studio-500'
                           }
                         `}
-                        title="Click: preview | Doble-click: insertar"
+                        title="Click: preview | Double-click: insert"
                       >
                         :{variant}
                       </button>
@@ -409,10 +409,10 @@ export default function SampleBrowser({ isOpen, onClose }) {
                   }}
                   className="w-full px-3 py-2 text-xs bg-purple-600/30 text-purple-300 rounded hover:bg-purple-600/50"
                 >
-                  Insertar todas como alternancia
+                  Insert all as alternating
                 </button>
                 <p className="text-[10px] text-gray-500 text-center mt-2">
-                  Click = preview | Doble-click = insertar
+                  Click = preview | Double-click = insert
                 </p>
               </div>
             </div>
@@ -422,14 +422,14 @@ export default function SampleBrowser({ isOpen, onClose }) {
         {/* Footer */}
         <div className="px-4 py-2 bg-studio-700 border-t border-studio-600 flex items-center justify-between">
           <p className="text-xs text-gray-500">
-            {filteredSamples.length} samples mostrados
+            {filteredSamples.length} samples shown
             {selectedCategory && ` en ${selectedCategory}`}
           </p>
           <button
             onClick={onClose}
             className="px-4 py-1.5 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 text-sm"
           >
-            Cerrar
+            Close
           </button>
         </div>
       </div>

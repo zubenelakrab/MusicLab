@@ -2,6 +2,8 @@ import { useRef } from 'react';
 import { FilePlus, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../../store';
 import logger from '../../utils/logger';
+import { generateId, generateTrackId, generateClipId } from '../../utils/id';
+import { clearAutosave } from '../../hooks/usePersistence';
 
 export default function FileManager() {
   const fileInputRef = useRef(null);
@@ -85,7 +87,7 @@ export default function FileManager() {
               loopStart: arr.loopStart || 0,
               loopEnd: arr.loopEnd || 8,
               tracks: arr.tracks.map(track => ({
-                id: track.id || `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                id: track.id || generateTrackId(),
                 name: track.name || 'Track',
                 color: track.color || '#00d4aa',
                 muted: track.muted || false,
@@ -93,7 +95,7 @@ export default function FileManager() {
                 height: track.height || 100,
                 params: track.params || { gain: 0.8, pan: 0, cutoff: 8000, resonance: 0, speed: 1 },
                 clips: (track.clips || []).map(clip => ({
-                  id: clip.id || `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  id: clip.id || generateClipId(),
                   patternId: clip.patternId || null,
                   name: clip.name || 'Clip',
                   startBar: clip.startBar || 0,
@@ -111,7 +113,7 @@ export default function FileManager() {
         // Legacy version 1.0 format with layers - convert to tracks
         if (composition.layers && Array.isArray(composition.layers)) {
           const tracks = composition.layers.map((layer, index) => ({
-            id: `track-${Date.now()}-${index}`,
+            id: generateTrackId(),
             name: layer.name || `Track ${index + 1}`,
             color: ['#00d4aa', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5],
             muted: layer.muted || false,
@@ -119,14 +121,14 @@ export default function FileManager() {
             height: 100,
             params: layer.params || { gain: 0.8, pan: 0, cutoff: 8000, resonance: 0, speed: 1 },
             clips: [{
-              id: `clip-${Date.now()}-${index}`,
+              id: generateClipId(),
               patternId: null,
               name: layer.name || `Clip ${index + 1}`,
               startBar: 0,
               durationBars: 4,
               color: ['#00d4aa', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5],
               layers: [{
-                id: `layer-${Date.now()}-${index}`,
+                id: generateId(),
                 name: layer.name || 'Layer 1',
                 code: layer.code || '',
                 muted: false,
@@ -175,6 +177,7 @@ export default function FileManager() {
       }
     }
 
+    clearAutosave();
     useStore.setState({
       arrangement: {
         id: null,

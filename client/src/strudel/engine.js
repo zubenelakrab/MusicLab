@@ -9,6 +9,7 @@ let currentLayers = [];
 let analyserNode = null;
 let analyserConnected = false;
 let interceptInstalled = false;
+let originalGainConnect = null;
 
 // Export getAudioContext for visualizer
 export { getAudioContext };
@@ -29,7 +30,8 @@ function installDestinationIntercept() {
     analyserNode.maxDecibels = -10;
 
     // Store original connect method
-    const originalConnect = GainNode.prototype.connect;
+    originalGainConnect = GainNode.prototype.connect;
+    const originalConnect = originalGainConnect;
 
     // Monkey-patch connect to intercept connections to destination
     GainNode.prototype.connect = function(destination, ...args) {
@@ -113,6 +115,58 @@ export function createRepl() {
   return repl;
 }
 
+// Parse pattern code that may contain .gain() modifiers from step sequencer
+// Handles: "[bd ~ bd ~]", "[bd ~ bd ~].gain(0.80)", "[bd ~ bd ~].gain([0.40 ~ 1.00 ~])"
+// Also handles stacked patterns separated by " , "
+function parsePatternCode(code) {
+  if (!code || code.trim() === '~') {
+    return mini('~').s();
+  }
+
+  // Fast path: no .gain() modifiers, use simple mini notation
+  if (!code.includes('.gain(')) {
+    return mini(code).s();
+  }
+
+  // Split by top-level " , " (stacked patterns)
+  const parts = code.split(' , ');
+
+  const patterns = parts.map(part => {
+    part = part.trim();
+
+    // Check for .gain([...]) suffix (per-step gain pattern)
+    const arrayGainMatch = part.match(/^(.+)\.gain\(\[([^\]]+)\]\)$/);
+    if (arrayGainMatch) {
+      const soundPart = arrayGainMatch[1].trim();
+      const gainPart = arrayGainMatch[2].trim();
+      let p = mini(soundPart).s();
+      p = p.gain(mini(`[${gainPart}]`));
+      return p;
+    }
+
+    // Check for .gain(number) suffix (uniform gain)
+    const singleGainMatch = part.match(/^(.+)\.gain\(([0-9.]+)\)$/);
+    if (singleGainMatch) {
+      const soundPart = singleGainMatch[1].trim();
+      const gainValue = parseFloat(singleGainMatch[2]);
+      return mini(soundPart).s().gain(gainValue);
+    }
+
+    // No gain modifier on this part
+    return mini(part).s();
+  });
+
+  if (patterns.length === 0) return mini('~').s();
+  if (patterns.length === 1) return patterns[0];
+
+  // Stack all patterns
+  let combined = patterns[0];
+  for (let i = 1; i < patterns.length; i++) {
+    combined = combined.stack(patterns[i]);
+  }
+  return combined;
+}
+
 // Build a pattern from a single layer with its params
 function buildLayerPattern(layer) {
   const { code, params } = layer;
@@ -121,16 +175,39 @@ function buildLayerPattern(layer) {
   try {
     let pattern;
 
-    // Check if this is a melodic pattern: note("...").sound("...")
-    const melodicMatch = code.match(/^note\("([^"]+)"\)\.sound\("([^"]+)"\)$/);
-    if (melodicMatch) {
-      const notePattern = melodicMatch[1];
-      const synthName = melodicMatch[2];
-      // Build melodic pattern using mini notation with .note() and .s()
-      pattern = mini(notePattern).note().s(synthName);
-    } else {
-      // Standard drum/sample pattern
-      pattern = mini(code).s();
+    // Check for melodic with array gain: note("...").sound("...").gain([...])
+    const melodicArrayGainMatch = code.match(/^note\("([^"]+)"\)\.sound\("([^"]+)"\)\.gain\(\[([^\]]+)\]\)$/);
+    if (melodicArrayGainMatch) {
+      const notePattern = melodicArrayGainMatch[1];
+      const synthName = melodicArrayGainMatch[2];
+      const gainPart = melodicArrayGainMatch[3];
+      pattern = mini(notePattern).note().s(synthName).gain(mini(`[${gainPart}]`));
+    }
+
+    // Check for melodic with single gain: note("...").sound("...").gain(N)
+    if (!pattern) {
+      const melodicSingleGainMatch = code.match(/^note\("([^"]+)"\)\.sound\("([^"]+)"\)\.gain\(([0-9.]+)\)$/);
+      if (melodicSingleGainMatch) {
+        const notePattern = melodicSingleGainMatch[1];
+        const synthName = melodicSingleGainMatch[2];
+        const gainValue = parseFloat(melodicSingleGainMatch[3]);
+        pattern = mini(notePattern).note().s(synthName).gain(gainValue);
+      }
+    }
+
+    // Plain melodic: note("...").sound("...")
+    if (!pattern) {
+      const melodicMatch = code.match(/^note\("([^"]+)"\)\.sound\("([^"]+)"\)$/);
+      if (melodicMatch) {
+        const notePattern = melodicMatch[1];
+        const synthName = melodicMatch[2];
+        pattern = mini(notePattern).note().s(synthName);
+      }
+    }
+
+    if (!pattern) {
+      // Standard drum/sample pattern (handles .gain() from step sequencer)
+      pattern = parsePatternCode(code);
     }
 
     // Apply layer-specific parameters (mixer)
@@ -354,6 +431,18 @@ export function stop() {
   }
 }
 
+export function cleanupAudio() {
+  // Restore original GainNode.prototype.connect if we monkey-patched it
+  if (originalGainConnect) {
+    GainNode.prototype.connect = originalGainConnect;
+    originalGainConnect = null;
+  }
+  interceptInstalled = false;
+  analyserConnected = false;
+  analyserNode = null;
+  recordedChunks = [];
+}
+
 export function setTempo(bpm) {
   if (repl) {
     const { scheduler } = repl;
@@ -409,8 +498,8 @@ export async function startPreview(code, bpm = 120, swing = 0) {
     const { scheduler } = repl;
     scheduler.setCps(cps);
 
-    // Create preview pattern
-    let pattern = mini(code).s();
+    // Create preview pattern (handles .gain() from step sequencer)
+    let pattern = parsePatternCode(code);
 
     // Apply swing if set (0-100 maps to 0-0.5)
     if (swing > 0 && typeof pattern.swing === 'function') {
@@ -436,7 +525,7 @@ export async function startPreview(code, bpm = 120, swing = 0) {
 
 // Preview for melodic patterns (notes instead of sounds)
 // Uses dirt-samples that respond to note values
-export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120) {
+export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120, gainInfo = null) {
   if (!repl) {
     createRepl();
   }
@@ -451,8 +540,16 @@ export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120
     scheduler.setCps(cps);
 
     // Create melodic pattern: note("c3 e3").s("arpy")
-    // Using .s() which is shorthand for .sound()
     let pattern = mini(notePattern).note().s(synth);
+
+    // Apply gain info if provided
+    if (gainInfo) {
+      if (gainInfo.type === 'array') {
+        pattern = pattern.gain(mini(`[${gainInfo.pattern}]`));
+      } else if (gainInfo.type === 'single') {
+        pattern = pattern.gain(gainInfo.value);
+      }
+    }
 
     scheduler.setPattern(pattern);
     scheduler.start();
@@ -567,6 +664,7 @@ export function startRecording() {
 
     mediaRecorder.onerror = (e) => {
       logger.error('Recording error:', e);
+      recordedChunks = [];
     };
 
     // Start recording with 100ms chunks for memory efficiency

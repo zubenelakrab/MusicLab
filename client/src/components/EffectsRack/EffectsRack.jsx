@@ -364,13 +364,13 @@ export default function EffectsRack({ isOpen, onClose }) {
         <div className="px-4 py-3 bg-studio-700 border-t border-studio-600">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">
-              Los efectos se aplican en tiempo real al layer seleccionado
+              Effects are applied in real time to the selected layer
             </p>
             <button
               onClick={onClose}
               className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400"
             >
-              Cerrar
+              Close
             </button>
           </div>
         </div>

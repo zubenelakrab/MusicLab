@@ -20,6 +20,18 @@ router.get('/:id', (req, res) => {
 
 router.post('/', (req, res) => {
   const { name, bpm, tracks } = req.body;
+
+  // Validate input
+  if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
+    return res.status(400).json({ error: 'name must be a string (max 200 chars)' });
+  }
+  if (bpm !== undefined && (typeof bpm !== 'number' || bpm < 20 || bpm > 400)) {
+    return res.status(400).json({ error: 'bpm must be a number between 20 and 400' });
+  }
+  if (tracks !== undefined && !Array.isArray(tracks)) {
+    return res.status(400).json({ error: 'tracks must be an array' });
+  }
+
   const project = {
     id: uuidv4(),
     name: name || 'Untitled Project',
@@ -32,7 +44,18 @@ router.post('/', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  const updated = store.update(COLLECTION, req.params.id, req.body);
+  const body = req.body;
+
+  // Validate body is an object
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    return res.status(400).json({ error: 'Request body must be an object' });
+  }
+  // Cannot change id
+  if (body.id !== undefined && body.id !== req.params.id) {
+    return res.status(400).json({ error: 'Cannot change id' });
+  }
+
+  const updated = store.update(COLLECTION, req.params.id, body);
   if (!updated) {
     return res.status(404).json({ error: 'Project not found' });
   }

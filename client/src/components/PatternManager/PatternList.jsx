@@ -3,12 +3,9 @@ import { useStore } from '../../store';
 import PatternCard from './PatternCard';
 import PatternForm from './PatternForm';
 import logger from '../../utils/logger';
+import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 
 const API_URL = '/api/patterns';
-
-// Generate unique IDs
-const generateTrackId = () => `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-const generateClipId = () => `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 // Default track colors
 const TRACK_COLORS = [
@@ -126,7 +123,7 @@ export default function PatternList() {
         durationBars: 4,
         color,
         layers: [{
-          id: `layer-${Date.now()}`,
+          id: generateId(),
           name: pattern.name,
           code: pattern.code,
           muted: false,

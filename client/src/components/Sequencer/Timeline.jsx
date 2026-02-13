@@ -57,10 +57,10 @@ export default function Timeline() {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">Capas</span>
+          <span className="text-sm text-gray-400">Layers</span>
           {isPlaying && (
             <span className="text-xs text-accent-primary animate-pulse">
-              EN VIVO
+              LIVE
             </span>
           )}
         </div>
@@ -69,7 +69,7 @@ export default function Timeline() {
           className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center gap-1"
         >
           <Plus size={14} />
-          <span>Capa</span>
+          <span>Layer</span>
         </button>
       </div>
 
@@ -78,7 +78,7 @@ export default function Timeline() {
         <div className="flex-1 overflow-y-auto">
           {layers.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-              Agrega una capa para comenzar
+              Add a layer to get started
             </div>
           ) : (
             layers.map((layer, index) => {
@@ -156,7 +156,7 @@ export default function Timeline() {
                             removeLayer(index);
                           }}
                           className="w-5 h-5 rounded flex items-center justify-center bg-studio-500 text-gray-400 hover:bg-red-600 hover:text-white"
-                          title="Eliminar"
+                          title="Delete"
                         >
                           <Trash2 size={12} />
                         </button>
@@ -188,7 +188,7 @@ export default function Timeline() {
                     ) : (
                       <div className="h-10 flex items-center">
                         <span className="text-sm text-gray-600 italic">
-                          Sin codigo
+                          No code
                         </span>
                       </div>
                     )}
@@ -209,7 +209,7 @@ export default function Timeline() {
             {/* Gain */}
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">Volumen</span>
+                <span className="text-gray-400">Volume</span>
                 <span className="text-accent-primary">
                   {Math.round((selectedLayer.params?.gain ?? 0.8) * 100)}%
                 </span>
@@ -270,7 +270,7 @@ export default function Timeline() {
             {/* Cutoff */}
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">Filtro</span>
+                <span className="text-gray-400">Filter</span>
                 <span className="text-accent-primary">
                   {Math.round(selectedLayer.params?.cutoff ?? 8000)} Hz
                 </span>
@@ -289,7 +289,7 @@ export default function Timeline() {
             {/* Resonance */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-gray-400">Resonancia</span>
+                <span className="text-gray-400">Resonance</span>
                 <span className="text-accent-primary">
                   {Math.round(selectedLayer.params?.resonance ?? 0)}
                 </span>

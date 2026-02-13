@@ -1,127 +1,617 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, Play, Square, Copy, Trash2, RotateCcw, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { X, Play, Square, Copy, Trash2, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Plus, Shuffle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 import { initAudio, startMelodicPreview, stopPreview } from '../../strudel/engine';
+import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 
-// Musical notes
-const NOTES = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-const NOTE_LABELS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+// Full chromatic scale
+const CHROMATIC_NOTES = ['c','c#','d','d#','e','f','f#','g','g#','a','a#','b'];
+const CHROMATIC_LABELS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 
-// Note colors (chromatic gradient)
-const NOTE_COLORS = {
-  c: '#ef4444', // red
-  d: '#f97316', // orange
-  e: '#eab308', // yellow
-  f: '#22c55e', // green
-  g: '#3b82f6', // blue
-  a: '#8b5cf6', // purple
-  b: '#ec4899', // pink
+// Scale definitions (semitone intervals from root)
+const SCALES = {
+  chromatic:     [0,1,2,3,4,5,6,7,8,9,10,11],
+  major:         [0,2,4,5,7,9,11],
+  minor:         [0,2,3,5,7,8,10],
+  pentatonic:    [0,2,4,7,9],
+  blues:         [0,3,5,6,7,10],
+  dorian:        [0,2,3,5,7,9,10],
+  mixolydian:    [0,2,4,5,7,9,10],
+  harmonicMinor: [0,2,3,5,7,8,11],
 };
 
-// Available synths - dirt-samples that respond to note values
+const SCALE_LABELS = {
+  chromatic: 'Chromatic',
+  major: 'Major',
+  minor: 'Minor',
+  pentatonic: 'Pentatonic',
+  blues: 'Blues',
+  dorian: 'Dorian',
+  mixolydian: 'Mixolydian',
+  harmonicMinor: 'Harmonic Minor',
+};
+
+// Note colors - 12 chromatic
+const NOTE_COLORS = {
+  c: '#ef4444', 'c#': '#f97316', d: '#fb923c', 'd#': '#eab308',
+  e: '#a3e635', f: '#22c55e', 'f#': '#14b8a6', g: '#3b82f6',
+  'g#': '#6366f1', a: '#8b5cf6', 'a#': '#d946ef', b: '#ec4899',
+};
+
+// Black keys for piano styling
+const BLACK_KEYS = new Set(['c#','d#','f#','g#','a#']);
+
+// Available synths - all tonal dirt-samples (loaded via github:tidalcycles/dirt-samples)
 const SYNTHS = [
-  { id: 'arpy', name: 'Arpy (Synth)' },
-  { id: 'pluck', name: 'Pluck' },
-  { id: 'jvbass', name: 'JV Bass' },
-  { id: 'bass1', name: 'Bass 1' },
-  { id: 'bass3', name: 'Bass 3' },
-  { id: 'moog', name: 'Moog' },
-  { id: 'juno', name: 'Juno' },
-  { id: 'fm', name: 'FM Synth' },
-  { id: 'gtr', name: 'Guitar' },
-  { id: 'sitar', name: 'Sitar' },
+  // Synths
+  { id: 'arpy', name: 'Arpy', cat: 'Synths' },
+  { id: 'juno', name: 'Juno', cat: 'Synths' },
+  { id: 'fm', name: 'FM Synth', cat: 'Synths' },
+  { id: 'casio', name: 'Casio', cat: 'Synths' },
+  { id: 'psr', name: 'Yamaha PSR', cat: 'Synths' },
+  { id: 'sid', name: 'SID Chip', cat: 'Synths' },
+  { id: 'hoover', name: 'Hoover', cat: 'Synths' },
+  { id: 'simplesine', name: 'Simple Sine', cat: 'Synths' },
+  // Bass
+  { id: 'jvbass', name: 'JV Bass', cat: 'Bass' },
+  { id: 'bass', name: 'Bass', cat: 'Bass' },
+  { id: 'bass0', name: 'Bass 0', cat: 'Bass' },
+  { id: 'bass1', name: 'Bass 1', cat: 'Bass' },
+  { id: 'bass2', name: 'Bass 2', cat: 'Bass' },
+  { id: 'bass3', name: 'Bass 3', cat: 'Bass' },
+  { id: 'moog', name: 'Moog', cat: 'Bass' },
+  { id: 'jungbass', name: 'Jungle Bass', cat: 'Bass' },
+  // Keys / Plucked
+  { id: 'pluck', name: 'Pluck', cat: 'Keys' },
+  { id: 'newnotes', name: 'New Notes', cat: 'Keys' },
+  { id: 'notes', name: 'Notes', cat: 'Keys' },
+  { id: 'oc', name: 'Organ', cat: 'Keys' },
+  { id: 'sugar', name: 'Sugar', cat: 'Keys' },
+  { id: 'blip', name: 'Blip', cat: 'Keys' },
+  { id: 'bleep', name: 'Bleep', cat: 'Keys' },
+  { id: 'flick', name: 'Flick', cat: 'Keys' },
+  // Strings / Guitar / World
+  { id: 'gtr', name: 'Guitar', cat: 'Strings' },
+  { id: 'sitar', name: 'Sitar', cat: 'Strings' },
+  { id: 'sax', name: 'Saxophone', cat: 'Strings' },
+  { id: 'east', name: 'Eastern', cat: 'Strings' },
+  { id: 'peri', name: 'Peri', cat: 'Strings' },
+  { id: 'tabla', name: 'Tabla', cat: 'Strings' },
+  { id: 'tabla2', name: 'Tabla 2', cat: 'Strings' },
+  // Pads / Stabs
+  { id: 'pad', name: 'Pad', cat: 'Pads' },
+  { id: 'padlong', name: 'Pad Long', cat: 'Pads' },
+  { id: 'stab', name: 'Stab', cat: 'Pads' },
+  { id: 'rave', name: 'Rave', cat: 'Pads' },
+  { id: 'rave2', name: 'Rave 2', cat: 'Pads' },
+  { id: 'ravemono', name: 'Rave Mono', cat: 'Pads' },
+  { id: 'wobble', name: 'Wobble', cat: 'Pads' },
+  // Vocal / FX
+  { id: 'mouth', name: 'Mouth', cat: 'Vocal' },
+  { id: 'speech', name: 'Speech', cat: 'Vocal' },
+  { id: 'speechless', name: 'Speechless', cat: 'Vocal' },
 ];
 
-// Melodic presets - using valid dirt-samples
+const SYNTH_CATEGORIES = ['Synths', 'Bass', 'Keys', 'Strings', 'Pads', 'Vocal'];
+
+const VELOCITY_GAIN = [0, 0.40, 0.70, 1.00];
+
+// Presets using new grid format { stepIndex: { noteKey: velocity } }
 const PRESETS = [
+  // --- Arpeggios ---
   {
-    name: 'Arpeggio Up',
+    name: 'Trance Arp',
     synth: 'arpy',
-    notes: [
-      { note: 'c', octave: 3 }, null, { note: 'e', octave: 3 }, null,
-      { note: 'g', octave: 3 }, null, { note: 'c', octave: 4 }, null,
-      { note: 'e', octave: 4 }, null, { note: 'g', octave: 4 }, null,
-      { note: 'c', octave: 5 }, null, { note: 'g', octave: 4 }, null,
-    ]
+    grid: {
+      0: { c3: 3 }, 1: { e3: 2 }, 2: { g3: 3 }, 3: { c4: 2 },
+      4: { e4: 3 }, 5: { g3: 2 }, 6: { c4: 3 }, 7: { e3: 2 },
+      8: { c3: 3 }, 9: { e3: 2 }, 10: { g3: 3 }, 11: { c4: 2 },
+      12: { g4: 3 }, 13: { e4: 2 }, 14: { c4: 1 }, 15: { g3: 2 },
+    },
   },
   {
-    name: 'Arpeggio Down',
-    synth: 'arpy',
-    notes: [
-      { note: 'c', octave: 5 }, null, { note: 'g', octave: 4 }, null,
-      { note: 'e', octave: 4 }, null, { note: 'c', octave: 4 }, null,
-      { note: 'g', octave: 3 }, null, { note: 'e', octave: 3 }, null,
-      { note: 'c', octave: 3 }, null, { note: 'e', octave: 3 }, null,
-    ]
-  },
-  {
-    name: 'Bassline',
-    synth: 'jvbass',
-    notes: [
-      { note: 'c', octave: 2 }, null, { note: 'c', octave: 2 }, null,
-      { note: 'g', octave: 2 }, null, { note: 'a', octave: 2 }, null,
-      { note: 'c', octave: 2 }, null, { note: 'c', octave: 2 }, null,
-      { note: 'e', octave: 2 }, null, { note: 'g', octave: 2 }, null,
-    ]
-  },
-  {
-    name: 'Melody Pop',
-    synth: 'pluck',
-    notes: [
-      { note: 'e', octave: 4 }, null, { note: 'd', octave: 4 }, { note: 'c', octave: 4 },
-      null, { note: 'g', octave: 3 }, null, { note: 'c', octave: 4 },
-      { note: 'e', octave: 4 }, null, { note: 'g', octave: 4 }, null,
-      { note: 'e', octave: 4 }, { note: 'd', octave: 4 }, { note: 'c', octave: 4 }, null,
-    ]
-  },
-  {
-    name: 'Synth Lead',
-    synth: 'juno',
-    notes: [
-      { note: 'a', octave: 4 }, null, { note: 'a', octave: 4 }, null,
-      { note: 'g', octave: 4 }, null, { note: 'f', octave: 4 }, null,
-      { note: 'e', octave: 4 }, null, { note: 'e', octave: 4 }, null,
-      { note: 'd', octave: 4 }, null, { note: 'c', octave: 4 }, null,
-    ]
-  },
-  {
-    name: 'Minor Arp',
+    name: 'Minor Sweep',
     synth: 'fm',
-    notes: [
-      { note: 'a', octave: 3 }, null, { note: 'c', octave: 4 }, null,
-      { note: 'e', octave: 4 }, null, { note: 'a', octave: 4 }, null,
-      { note: 'e', octave: 4 }, null, { note: 'c', octave: 4 }, null,
-      { note: 'a', octave: 3 }, null, { note: 'e', octave: 3 }, null,
-    ]
+    grid: {
+      0: { a2: 3 }, 1: { c3: 2 }, 2: { e3: 3 }, 3: { a3: 2 },
+      4: { c4: 3 }, 5: { e4: 3 }, 6: { a4: 3 }, 7: { e4: 2 },
+      8: { c4: 3 }, 9: { a3: 2 }, 10: { e3: 3 }, 11: { c3: 2 },
+      12: { a2: 3 }, 13: { e3: 1 }, 14: { a3: 2 }, 15: { e3: 1 },
+    },
   },
   {
-    name: 'Moog Bass',
+    name: 'Pluck Arp',
+    synth: 'pluck',
+    grid: {
+      0: { e3: 3 }, 1: { g3: 2 }, 2: { b3: 3 }, 3: { e4: 2 },
+      4: { d3: 3 }, 5: { 'f#3': 2 }, 6: { a3: 3 }, 7: { d4: 2 },
+      8: { c3: 3 }, 9: { e3: 2 }, 10: { g3: 3 }, 11: { c4: 2 },
+      12: { b2: 3 }, 13: { d3: 2 }, 14: { 'f#3': 3 }, 15: { b3: 1 },
+    },
+  },
+  {
+    name: 'Bouncing Arp',
+    synth: 'casio',
+    grid: {
+      0: { c4: 3 }, 1: { g3: 2 }, 2: { e3: 1 }, 3: { g3: 2 },
+      4: { c4: 3 }, 5: { e4: 3 }, 6: { g4: 2 }, 7: { e4: 1 },
+      8: { f4: 3 }, 9: { c4: 2 }, 10: { a3: 1 }, 11: { c4: 2 },
+      12: { f4: 3 }, 13: { a4: 3 }, 14: { c5: 2 }, 15: { a4: 1 },
+    },
+  },
+  // --- Basslines ---
+  {
+    name: 'Acid Bass',
+    synth: 'bass3',
+    grid: {
+      0: { c2: 3 }, 1: { c2: 1 }, 2: { c3: 3 }, 3: { c2: 2 },
+      4: { 'd#2': 3 }, 6: { c2: 3 }, 7: { g2: 1 },
+      8: { 'a#1': 3 }, 9: { 'a#1': 1 }, 10: { 'a#2': 3 }, 11: { f2: 2 },
+      12: { g2: 3 }, 13: { g2: 1 }, 14: { 'a#2': 2 }, 15: { g2: 3 },
+    },
+  },
+  {
+    name: 'Acid Squelch',
+    synth: 'bass3',
+    grid: {
+      0: { d2: 3 }, 1: { d2: 1 }, 2: { d3: 3 },
+      4: { f2: 3 }, 5: { f2: 1 }, 6: { a2: 3 }, 7: { d2: 2 },
+      8: { c2: 3 }, 9: { c2: 1 }, 10: { 'd#2': 3 }, 11: { c3: 3 },
+      12: { 'a#1': 3 }, 14: { c2: 2 }, 15: { d2: 1 },
+    },
+  },
+  {
+    name: 'TB-303 Line',
+    synth: 'bass3',
+    grid: {
+      0: { e2: 3 }, 1: { e2: 1 }, 3: { e3: 3 },
+      4: { g2: 3 }, 5: { e2: 2 }, 7: { b2: 3 },
+      8: { a2: 3 }, 9: { a2: 1 }, 10: { e2: 2 }, 11: { a2: 3 },
+      12: { g2: 3 }, 13: { e2: 1 }, 14: { b2: 3 }, 15: { g2: 2 },
+    },
+  },
+  {
+    name: 'Disco Octaves',
+    synth: 'jvbass',
+    grid: {
+      0: { c2: 3 }, 1: { c3: 2 }, 2: { c2: 3 }, 3: { c3: 1 },
+      4: { f2: 3 }, 5: { f3: 2 }, 6: { f2: 3 }, 7: { f3: 1 },
+      8: { g2: 3 }, 9: { g3: 2 }, 10: { g2: 3 }, 11: { g3: 1 },
+      12: { f2: 3 }, 13: { f3: 2 }, 14: { 'd#2': 3 }, 15: { d2: 2 },
+    },
+  },
+  {
+    name: 'Funky Moog',
     synth: 'moog',
-    notes: [
-      { note: 'c', octave: 2 }, { note: 'c', octave: 2 }, null, { note: 'c', octave: 2 },
-      null, { note: 'g', octave: 2 }, null, null,
-      { note: 'a', octave: 2 }, null, { note: 'g', octave: 2 }, null,
-      { note: 'f', octave: 2 }, null, { note: 'g', octave: 2 }, null,
-    ]
+    grid: {
+      0: { e2: 3 }, 2: { g2: 2 }, 3: { a2: 3 },
+      5: { e2: 2 }, 6: { e2: 1 }, 7: { b2: 3 },
+      8: { a2: 3 }, 10: { g2: 2 }, 11: { e2: 3 },
+      12: { d2: 3 }, 13: { e2: 2 }, 15: { g2: 1 },
+    },
   },
   {
-    name: 'Guitar Riff',
+    name: 'Deep House',
+    synth: 'jvbass',
+    grid: {
+      0: { g2: 3 }, 3: { g2: 1 }, 4: { 'a#2': 3 },
+      6: { c3: 2 }, 7: { 'a#2': 1 },
+      8: { f2: 3 }, 11: { f2: 1 }, 12: { d2: 3 },
+      14: { f2: 2 }, 15: { g2: 1 },
+    },
+  },
+  {
+    name: 'Techno Sub',
+    synth: 'bass1',
+    grid: {
+      0: { c2: 3 }, 4: { c2: 3 },
+      6: { 'd#2': 2 }, 7: { c2: 1 },
+      8: { c2: 3 }, 12: { c2: 3 },
+      14: { 'a#1': 2 }, 15: { c2: 1 },
+    },
+  },
+  {
+    name: 'DnB Reese',
+    synth: 'moog',
+    grid: {
+      0: { e2: 3 }, 2: { e2: 1 },
+      4: { g2: 3 }, 5: { e2: 2 },
+      7: { b2: 3 }, 8: { a2: 3 },
+      10: { g2: 2 }, 11: { e2: 1 },
+      12: { d2: 3 }, 14: { e2: 2 }, 15: { g2: 3 },
+    },
+  },
+  {
+    name: 'Slap Bass',
+    synth: 'bass2',
+    grid: {
+      0: { e2: 3 }, 1: { e2: 1 }, 3: { g2: 3 },
+      4: { a2: 3 }, 5: { a2: 1 }, 7: { e2: 2 },
+      8: { d2: 3 }, 9: { d2: 1 }, 10: { e2: 2 }, 11: { g2: 3 },
+      12: { a2: 3 }, 13: { b2: 2 }, 14: { a2: 3 }, 15: { g2: 1 },
+    },
+  },
+  {
+    name: 'Dub Bass',
+    synth: 'bass1',
+    grid: {
+      0: { a1: 3 }, 3: { a2: 2 },
+      5: { e2: 1 }, 7: { a1: 3 },
+      8: { d2: 3 }, 11: { d3: 2 },
+      13: { a2: 1 }, 15: { d2: 3 },
+    },
+  },
+  {
+    name: 'Walking Bass',
+    synth: 'bass1',
+    grid: {
+      0: { c2: 3 }, 2: { d2: 2 }, 4: { e2: 3 }, 6: { g2: 2 },
+      8: { a2: 3 }, 10: { g2: 2 }, 12: { f2: 3 }, 14: { e2: 2 },
+    },
+  },
+  {
+    name: 'Wobble Bass',
+    synth: 'wobble',
+    grid: {
+      0: { c2: 3 }, 1: { c2: 2 }, 2: { c2: 3 }, 3: { c2: 1 },
+      4: { 'd#2': 3 }, 5: { 'd#2': 2 }, 6: { 'd#2': 3 }, 7: { 'd#2': 1 },
+      8: { f2: 3 }, 9: { f2: 2 }, 10: { f2: 3 }, 11: { f2: 1 },
+      12: { 'd#2': 3 }, 13: { 'd#2': 2 }, 14: { c2: 3 }, 15: { c2: 2 },
+    },
+  },
+  // --- Melodies ---
+  {
+    name: 'Synth Pop',
+    synth: 'juno',
+    grid: {
+      0: { e4: 3 }, 1: { e4: 1 }, 2: { 'f#4': 2 }, 3: { g4: 3 },
+      5: { e4: 2 }, 7: { d4: 1 },
+      8: { c4: 3 }, 9: { c4: 1 }, 10: { d4: 2 }, 11: { e4: 3 },
+      13: { d4: 2 }, 14: { c4: 1 }, 15: { b3: 2 },
+    },
+  },
+  {
+    name: 'Sad Piano',
+    synth: 'pluck',
+    grid: {
+      0: { a3: 3 }, 2: { c4: 2 }, 3: { e4: 3 },
+      6: { d4: 2 }, 7: { c4: 1 },
+      8: { b3: 3 }, 10: { a3: 2 }, 11: { g3: 1 },
+      12: { a3: 3 }, 14: { e4: 2 }, 15: { d4: 1 },
+    },
+  },
+  {
+    name: 'Film Score',
+    synth: 'padlong',
+    grid: {
+      0: { d3: 3 }, 2: { f3: 2 }, 4: { a3: 3 }, 5: { d4: 3 },
+      8: { c4: 3 }, 10: { a3: 2 }, 12: { 'a#3': 3 }, 14: { a3: 2 },
+    },
+  },
+  {
+    name: 'Retro Game',
+    synth: 'sid',
+    grid: {
+      0: { e4: 3 }, 1: { e4: 1 }, 2: { e4: 3 }, 4: { c4: 3 },
+      5: { e4: 2 }, 7: { g4: 3 },
+      8: { g3: 3 }, 10: { c4: 2 }, 11: { e4: 3 },
+      12: { g4: 3 }, 13: { 'f#4': 2 }, 14: { f4: 3 }, 15: { d4: 2 },
+    },
+  },
+  {
+    name: 'Italo Disco',
+    synth: 'arpy',
+    grid: {
+      0: { a3: 3 }, 1: { e4: 2 }, 2: { a4: 3 }, 3: { e4: 1 },
+      4: { g3: 3 }, 5: { d4: 2 }, 6: { g4: 3 }, 7: { d4: 1 },
+      8: { f3: 3 }, 9: { c4: 2 }, 10: { f4: 3 }, 11: { c4: 1 },
+      12: { e3: 3 }, 13: { b3: 2 }, 14: { e4: 3 }, 15: { g3: 2 },
+    },
+  },
+  {
+    name: 'Stranger Things',
+    synth: 'juno',
+    grid: {
+      0: { c3: 3 }, 2: { e3: 2 }, 4: { g3: 3 }, 6: { b3: 2 },
+      8: { c4: 3 }, 10: { b3: 2 }, 12: { g3: 3 }, 14: { e3: 1 },
+    },
+  },
+  {
+    name: 'Hoover Lead',
+    synth: 'hoover',
+    grid: {
+      0: { c4: 3 }, 2: { 'd#4': 3 }, 3: { d4: 2 }, 4: { c4: 3 },
+      6: { g3: 2 }, 7: { 'a#3': 3 },
+      8: { c4: 3 }, 10: { 'd#4': 3 }, 11: { f4: 2 },
+      12: { 'd#4': 3 }, 13: { d4: 2 }, 14: { c4: 3 }, 15: { 'a#3': 1 },
+    },
+  },
+  // --- Chords ---
+  {
+    name: 'House Chords',
+    synth: 'stab',
+    grid: {
+      0: { c3: 3, e3: 3, g3: 3 }, 3: { c3: 1, e3: 1, g3: 1 },
+      4: { f3: 3, a3: 3, c4: 3 }, 6: { f3: 2, a3: 2, c4: 2 },
+      8: { a3: 3, c4: 3, e4: 3 }, 11: { a3: 1, c4: 1, e4: 1 },
+      12: { g3: 3, b3: 3, d4: 3 }, 14: { g3: 2, b3: 2, d4: 2 },
+    },
+  },
+  {
+    name: 'Reggae Skank',
+    synth: 'arpy',
+    grid: {
+      1: { 'a#3': 2, d4: 2, f4: 2 }, 2: { 'a#3': 3, d4: 3, f4: 3 },
+      5: { c4: 2, e4: 2, g4: 2 }, 6: { c4: 3, e4: 3, g4: 3 },
+      9: { 'a#3': 2, d4: 2, f4: 2 }, 10: { 'a#3': 3, d4: 3, f4: 3 },
+      13: { f3: 2, a3: 2, c4: 2 }, 14: { f3: 3, a3: 3, c4: 3 },
+    },
+  },
+  {
+    name: 'Rave Stabs',
+    synth: 'rave',
+    grid: {
+      0: { c4: 3, 'd#4': 3, g4: 3 },
+      4: { 'a#3': 3, d4: 3, f4: 3 }, 5: { 'a#3': 1, d4: 1, f4: 1 },
+      8: { 'g#3': 3, c4: 3, 'd#4': 3 },
+      12: { 'a#3': 3, d4: 3, f4: 3 }, 13: { 'a#3': 2, d4: 2, f4: 2 }, 14: { 'a#3': 1, d4: 1, f4: 1 },
+    },
+  },
+  {
+    name: 'Ambient Pads',
+    synth: 'padlong',
+    grid: {
+      0: { c3: 2, e3: 2, g3: 2 },
+      4: { d3: 2, f3: 2, a3: 2 },
+      8: { e3: 2, g3: 2, b3: 2 },
+      12: { c3: 2, f3: 2, a3: 2 },
+    },
+  },
+  {
+    name: 'Garage Stab',
+    synth: 'rave2',
+    grid: {
+      1: { d4: 3, 'f#4': 3, a4: 3 },
+      3: { d4: 1, 'f#4': 1, a4: 1 },
+      4: { e4: 3, g4: 3, b4: 3 },
+      8: { c4: 3, e4: 3, g4: 3 },
+      9: { c4: 1, e4: 1, g4: 1 },
+      12: { d4: 3, 'f#4': 3, a4: 3 }, 13: { d4: 2, 'f#4': 2, a4: 2 },
+    },
+  },
+  // --- World / Latin ---
+  {
+    name: 'Latin Montuno',
+    synth: 'casio',
+    grid: {
+      0: { c4: 3 }, 1: { e4: 2 }, 2: { g4: 3 }, 3: { e4: 1 },
+      4: { f4: 3 }, 5: { a4: 2 }, 6: { f4: 1 },
+      8: { e4: 3 }, 9: { g4: 2 }, 10: { c4: 3 },
+      12: { d4: 3 }, 13: { f4: 2 }, 14: { d4: 1 }, 15: { b3: 2 },
+    },
+  },
+  {
+    name: 'Eastern Melody',
+    synth: 'sitar',
+    grid: {
+      0: { d3: 3 }, 2: { f3: 2 }, 3: { e3: 3 }, 4: { f3: 2 },
+      6: { a3: 3 }, 7: { 'a#3': 2 },
+      8: { a3: 3 }, 10: { f3: 2 }, 11: { e3: 1 },
+      12: { d3: 3 }, 14: { c3: 2 }, 15: { d3: 1 },
+    },
+  },
+  {
+    name: 'Kalimba',
+    synth: 'arpy',
+    grid: {
+      0: { c4: 3 }, 2: { e4: 2 }, 3: { g4: 1 },
+      5: { e4: 2 }, 6: { c4: 3 },
+      8: { d4: 3 }, 10: { f4: 2 }, 11: { a4: 1 },
+      13: { f4: 2 }, 14: { d4: 3 }, 15: { c4: 1 },
+    },
+  },
+  {
+    name: 'Bossa Nova',
+    synth: 'pluck',
+    grid: {
+      0: { a3: 3 }, 1: { e3: 1 }, 3: { c4: 2 },
+      4: { b3: 3 }, 5: { g3: 1 },
+      7: { d4: 2 }, 8: { c4: 3 }, 9: { a3: 1 },
+      11: { e4: 2 }, 12: { d4: 3 }, 14: { b3: 2 }, 15: { a3: 1 },
+    },
+  },
+  // --- Arcade / Videogames ---
+  {
+    name: 'Super Mario',
+    synth: 'sid',
+    grid: {
+      0: { e4: 3 }, 1: { e4: 2 }, 3: { e4: 3 },
+      5: { c4: 3 }, 6: { e4: 2 },
+      8: { g4: 3 },
+      12: { g3: 3 },
+    },
+  },
+  {
+    name: 'Mario Underground',
+    synth: 'fm',
+    grid: {
+      0: { c3: 3 }, 1: { c4: 2 }, 2: { a3: 3 }, 3: { a2: 2 },
+      4: { 'a#2': 3 }, 5: { 'a#3': 2 }, 6: { 'f#3': 3 }, 7: { 'f#2': 1 },
+      8: { g2: 3 }, 9: { g3: 2 }, 10: { e3: 3 }, 11: { e2: 2 },
+      12: { c3: 3 }, 14: { g2: 2 }, 15: { c3: 1 },
+    },
+  },
+  {
+    name: 'Zelda Theme',
+    synth: 'arpy',
+    grid: {
+      0: { 'a#3': 3 }, 2: { f3: 2 }, 3: { f3: 1 },
+      4: { f3: 3 }, 5: { f3: 2 }, 6: { g3: 3 }, 7: { a3: 3 },
+      8: { 'a#3': 3 }, 10: { f3: 2 }, 11: { f3: 1 },
+      12: { f3: 3 }, 13: { 'a#3': 2 }, 14: { a3: 3 }, 15: { g3: 2 },
+    },
+  },
+  {
+    name: 'Zelda Puzzle',
+    synth: 'pluck',
+    grid: {
+      0: { g4: 3 }, 2: { 'f#4': 2 }, 4: { 'd#4': 3 },
+      6: { a3: 2 }, 8: { 'g#3': 3 },
+      10: { e4: 2 }, 12: { 'g#4': 3 }, 14: { c5: 3 },
+    },
+  },
+  {
+    name: 'Tetris A',
+    synth: 'casio',
+    grid: {
+      0: { e4: 3 }, 1: { b3: 2 }, 2: { c4: 3 }, 3: { d4: 2 },
+      4: { c4: 3 }, 5: { b3: 2 }, 6: { a3: 3 },
+      8: { a3: 3 }, 9: { c4: 2 }, 10: { e4: 3 },
+      12: { d4: 3 }, 13: { c4: 2 }, 14: { b3: 3 }, 15: { c4: 1 },
+    },
+  },
+  {
+    name: 'Tetris B',
+    synth: 'casio',
+    grid: {
+      0: { d4: 3 }, 2: { f4: 2 }, 4: { a4: 3 }, 5: { g4: 2 },
+      6: { f4: 3 }, 8: { e4: 3 }, 10: { c4: 2 },
+      12: { e4: 3 }, 13: { d4: 2 }, 14: { c4: 3 }, 15: { b3: 1 },
+    },
+  },
+  {
+    name: 'Pac-Man',
+    synth: 'blip',
+    grid: {
+      0: { b3: 3 }, 1: { b4: 2 }, 2: { 'f#4': 3 }, 3: { 'd#4': 2 },
+      4: { b4: 3 }, 5: { 'f#4': 1 }, 6: { 'd#4': 3 },
+      8: { c4: 3 }, 9: { c5: 2 }, 10: { g4: 3 }, 11: { e4: 2 },
+      12: { c5: 3 }, 13: { g4: 1 }, 14: { e4: 3 },
+    },
+  },
+  {
+    name: 'Space Invaders',
+    synth: 'sid',
+    grid: {
+      0: { e2: 3 }, 2: { d2: 3 }, 4: { c2: 3 }, 6: { b1: 3 },
+      8: { e2: 3 }, 10: { d2: 3 }, 12: { c2: 3 }, 14: { b1: 3 },
+    },
+  },
+  {
+    name: 'Mega Man',
+    synth: 'sid',
+    grid: {
+      0: { a4: 3 }, 1: { g4: 2 }, 2: { a4: 3 }, 3: { b4: 2 },
+      4: { a4: 3 }, 5: { g4: 2 }, 6: { f4: 3 },
+      8: { e4: 3 }, 9: { f4: 2 }, 10: { e4: 3 }, 11: { d4: 2 },
+      12: { c4: 3 }, 14: { d4: 2 }, 15: { e4: 1 },
+    },
+  },
+  {
+    name: 'Sonic Green Hill',
+    synth: 'arpy',
+    grid: {
+      0: { e4: 3 }, 1: { e4: 1 }, 2: { e4: 3 }, 3: { d4: 2 },
+      4: { e4: 3 }, 5: { 'f#4': 2 }, 6: { g4: 3 },
+      8: { 'f#4': 3 }, 9: { e4: 2 }, 10: { d4: 3 }, 11: { e4: 2 },
+      12: { 'f#4': 3 }, 13: { g4: 2 }, 14: { a4: 3 }, 15: { g4: 1 },
+    },
+  },
+  {
+    name: 'Castlevania',
+    synth: 'fm',
+    grid: {
+      0: { d4: 3 }, 1: { f4: 2 }, 2: { d4: 3 }, 3: { 'c#4': 2 },
+      4: { d4: 3 }, 5: { a3: 2 }, 6: { d4: 3 }, 7: { f4: 2 },
+      8: { e4: 3 }, 9: { 'c#4': 2 }, 10: { a3: 3 }, 11: { e4: 2 },
+      12: { d4: 3 }, 14: { a3: 2 }, 15: { d4: 1 },
+    },
+  },
+  {
+    name: 'Contra',
+    synth: 'sid',
+    grid: {
+      0: { e3: 3 }, 1: { e4: 2 }, 2: { d4: 3 }, 3: { e4: 2 },
+      4: { c4: 3 }, 5: { b3: 2 }, 6: { a3: 3 }, 7: { b3: 1 },
+      8: { c4: 3 }, 9: { d4: 2 }, 10: { e4: 3 }, 11: { d4: 2 },
+      12: { c4: 3 }, 13: { b3: 2 }, 14: { a3: 3 }, 15: { g3: 1 },
+    },
+  },
+  {
+    name: 'Street Fighter',
+    synth: 'juno',
+    grid: {
+      0: { c4: 3 }, 1: { c4: 1 }, 2: { c4: 3 }, 4: { d4: 3 },
+      5: { 'd#4': 3 }, 6: { d4: 2 }, 7: { 'd#4': 3 },
+      8: { f4: 3 }, 10: { 'd#4': 2 }, 12: { d4: 3 },
+      14: { c4: 2 }, 15: { d4: 1 },
+    },
+  },
+  {
+    name: 'Donkey Kong',
+    synth: 'pluck',
+    grid: {
+      0: { c4: 3 }, 2: { e4: 2 }, 4: { g4: 3 },
+      6: { e4: 2 }, 7: { c4: 1 },
+      8: { d4: 3 }, 10: { f4: 2 }, 12: { a4: 3 },
+      14: { f4: 2 }, 15: { d4: 1 },
+    },
+  },
+  {
+    name: 'Final Fantasy',
+    synth: 'arpy',
+    grid: {
+      0: { c4: 3 }, 1: { d4: 2 }, 2: { e4: 3 }, 3: { g4: 2 },
+      4: { a4: 3 }, 5: { g4: 2 }, 6: { e4: 3 }, 7: { d4: 1 },
+      8: { c4: 3 }, 9: { e4: 2 }, 10: { d4: 3 }, 11: { c4: 2 },
+      12: { b3: 3 }, 13: { c4: 2 }, 14: { d4: 3 }, 15: { e4: 1 },
+    },
+  },
+  {
+    name: 'Kirby Dream',
+    synth: 'casio',
+    grid: {
+      0: { g4: 3 }, 1: { a4: 2 }, 2: { b4: 3 }, 3: { a4: 1 },
+      4: { g4: 3 }, 5: { e4: 2 }, 6: { g4: 3 },
+      8: { a4: 3 }, 9: { b4: 2 }, 10: { c5: 3 }, 11: { b4: 1 },
+      12: { a4: 3 }, 14: { g4: 2 }, 15: { e4: 1 },
+    },
+  },
+  {
+    name: 'Metroid',
+    synth: 'fm',
+    grid: {
+      0: { e3: 3 }, 2: { 'f#3': 1 }, 4: { g3: 3 },
+      6: { 'f#3': 2 }, 7: { e3: 1 },
+      8: { 'd#3': 3 }, 10: { e3: 1 }, 12: { c3: 3 },
+      14: { b2: 2 }, 15: { c3: 1 },
+    },
+  },
+  // --- Guitar ---
+  {
+    name: 'Blues Riff',
     synth: 'gtr',
-    notes: [
-      { note: 'e', octave: 3 }, null, { note: 'g', octave: 3 }, { note: 'a', octave: 3 },
-      null, { note: 'b', octave: 3 }, null, null,
-      { note: 'e', octave: 3 }, null, { note: 'g', octave: 3 }, null,
-      { note: 'a', octave: 3 }, { note: 'g', octave: 3 }, { note: 'e', octave: 3 }, null,
-    ]
+    grid: {
+      0: { e3: 3 }, 1: { g3: 2 }, 2: { 'a#3': 3 }, 3: { b3: 2 },
+      4: { 'a#3': 3 }, 6: { g3: 2 },
+      8: { a3: 3 }, 9: { g3: 2 }, 10: { e3: 3 }, 11: { g3: 1 },
+      12: { e3: 3 }, 14: { d3: 2 }, 15: { e3: 1 },
+    },
+  },
+  {
+    name: 'Clean Pluck',
+    synth: 'pluck',
+    grid: {
+      0: { e3: 3 }, 2: { b3: 2 }, 3: { e4: 3 },
+      4: { g3: 2 }, 6: { d4: 3 },
+      8: { a3: 3 }, 10: { c4: 2 }, 11: { e4: 3 },
+      12: { d4: 2 }, 13: { b3: 1 }, 14: { g3: 2 }, 15: { 'f#3': 1 },
+    },
   },
 ];
 
 const STEP_OPTIONS = [8, 16, 32];
-
-// Generate unique IDs
-const generateTrackId = () => `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-const generateClipId = () => `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 // Track colors
 const TRACK_COLORS = [
@@ -129,53 +619,184 @@ const TRACK_COLORS = [
   '#85c1e9', '#f8b500', '#e74c3c', '#2ecc71', '#9b59b6',
 ];
 
+// Convert hex to rgba
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export default function MelodicSequencer({ isOpen, onClose }) {
   const { arrangement, setEditingClip, bpm } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
+  // Core state
   const [steps, setSteps] = useState(16);
-  const [grid, setGrid] = useState(Array(16).fill(null)); // null or {note, octave}
+  const [grid, setGrid] = useState({}); // { stepIndex: { noteKey: velocity } }
   const [synth, setSynth] = useState('arpy');
-  const [selectedNote, setSelectedNote] = useState('c');
-  const [selectedOctave, setSelectedOctave] = useState(3);
+  const [rootNote, setRootNote] = useState('c');
+  const [scale, setScale] = useState('chromatic');
+  const [baseOctave, setBaseOctave] = useState(3);
+  const octaveRange = 2;
   const [currentStep, setCurrentStep] = useState(0);
   const [previewCode, setPreviewCode] = useState('');
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [randomDensity, setRandomDensity] = useState(50);
   const stepIntervalRef = useRef(null);
+  const gridRef = useRef(null);
 
-  // Update grid size when steps change
-  useEffect(() => {
-    setGrid(prev => {
-      const newGrid = Array(steps).fill(null);
-      prev.forEach((cell, i) => {
-        if (i < steps) newGrid[i] = cell;
+
+  // Compute visible notes for the piano roll
+  const getVisibleNotes = useCallback(() => {
+    const scaleIntervals = SCALES[scale];
+    const rootIndex = CHROMATIC_NOTES.indexOf(rootNote);
+    const notes = [];
+    for (let oct = baseOctave; oct < baseOctave + octaveRange; oct++) {
+      for (const interval of scaleIntervals) {
+        const noteIndex = (rootIndex + interval) % 12;
+        const noteOctave = oct + Math.floor((rootIndex + interval) / 12);
+        const noteName = CHROMATIC_NOTES[noteIndex];
+        const noteKey = `${noteName}${noteOctave}`;
+        notes.push({ name: noteName, octave: noteOctave, key: noteKey, color: NOTE_COLORS[noteName] });
+      }
+    }
+    return notes;
+  }, [scale, rootNote, baseOctave, octaveRange]);
+
+  const visibleNotes = getVisibleNotes();
+  // Reversed for rendering: high notes at top
+  const displayNotes = [...visibleNotes].reverse();
+
+  // Scroll view so notes stay visible (only moves baseOctave, never changes octaveRange)
+  const scrollToNotes = useCallback((gridData) => {
+    const octaves = new Set();
+    Object.values(gridData).forEach(stepNotes => {
+      if (!stepNotes) return;
+      Object.keys(stepNotes).forEach(noteKey => {
+        const m = noteKey.match(/(\d+)$/);
+        if (m) octaves.add(parseInt(m[1]));
       });
-      return newGrid;
     });
-  }, [steps]);
+    if (octaves.size === 0) return;
+    const minOct = Math.min(...octaves);
+    const maxOct = Math.max(...octaves);
+    // Center the view around the notes
+    const center = Math.floor((minOct + maxOct) / 2);
+    setBaseOctave(prev => {
+      const newBase = Math.max(1, Math.min(6, center - Math.floor(octaveRange / 2)));
+      // Only move if notes are actually outside current view
+      if (minOct < prev || maxOct >= prev + octaveRange) {
+        return newBase;
+      }
+      return prev;
+    });
+  }, [octaveRange]);
 
-  // Generate just the note pattern (for preview)
-  const generatePattern = useCallback(() => {
-    const hasNotes = grid.some(cell => cell !== null);
+  // Generate note pattern string (for preview)
+  const generateNotePattern = useCallback(() => {
+    const hasNotes = Object.keys(grid).some(step => grid[step] && Object.keys(grid[step]).length > 0);
+    if (!hasNotes) return null;
+
+    const noteSteps = [];
+    for (let i = 0; i < steps; i++) {
+      const stepNotes = grid[i];
+      if (!stepNotes || Object.keys(stepNotes).length === 0) {
+        noteSteps.push('~');
+      } else {
+        const entries = Object.entries(stepNotes);
+        if (entries.length === 1) {
+          noteSteps.push(entries[0][0]);
+        } else {
+          const notes = entries.map(([k]) => k).join(',');
+          noteSteps.push(`<${notes}>`);
+        }
+      }
+    }
+    return noteSteps.join(' ');
+  }, [grid, steps]);
+
+  // Generate full Strudel code with velocity
+  const generateCode = useCallback(() => {
+    const hasNotes = Object.keys(grid).some(step => grid[step] && Object.keys(grid[step]).length > 0);
     if (!hasNotes) return '~';
 
-    return grid.map(cell => {
-      if (!cell) return '~';
-      return `${cell.note}${cell.octave}`;
-    }).join(' ');
-  }, [grid]);
+    const noteSteps = [];
+    const gainSteps = [];
+    let hasVelocityVariation = false;
+    let firstVel = null;
 
-  // Generate full Strudel code (for display and layer export)
-  const generateCode = useCallback(() => {
-    const pattern = generatePattern();
-    if (pattern === '~') return '~';
-    return `note("${pattern}").sound("${synth}")`;
-  }, [generatePattern, synth]);
+    for (let i = 0; i < steps; i++) {
+      const stepNotes = grid[i];
+      if (!stepNotes || Object.keys(stepNotes).length === 0) {
+        noteSteps.push('~');
+        gainSteps.push('~');
+      } else {
+        const entries = Object.entries(stepNotes);
+        if (entries.length === 1) {
+          const [noteKey, vel] = entries[0];
+          noteSteps.push(noteKey);
+          const g = VELOCITY_GAIN[vel];
+          gainSteps.push(g.toFixed(2));
+          if (firstVel === null) firstVel = g;
+          else if (Math.abs(g - firstVel) > 0.01) hasVelocityVariation = true;
+        } else {
+          const notes = entries.map(([k]) => k).join(',');
+          noteSteps.push(`<${notes}>`);
+          const maxVel = Math.max(...entries.map(([, v]) => v));
+          const g = VELOCITY_GAIN[maxVel];
+          gainSteps.push(g.toFixed(2));
+          if (firstVel === null) firstVel = g;
+          else if (Math.abs(g - firstVel) > 0.01) hasVelocityVariation = true;
+        }
+      }
+    }
 
-  // Update preview code when grid or synth changes
+    const notePattern = noteSteps.join(' ');
+    const baseCode = `note("${notePattern}").sound("${synth}")`;
+
+    if (!hasVelocityVariation && firstVel !== null) {
+      return Math.abs(firstVel - 1) > 0.01 ? `${baseCode}.gain(${firstVel.toFixed(2)})` : baseCode;
+    }
+
+    const gainPattern = gainSteps.join(' ');
+    return `${baseCode}.gain([${gainPattern}])`;
+  }, [grid, steps, synth]);
+
+  // Compute gain info for preview
+  const getGainInfo = useCallback(() => {
+    const hasNotes = Object.keys(grid).some(step => grid[step] && Object.keys(grid[step]).length > 0);
+    if (!hasNotes) return null;
+
+    const gainSteps = [];
+    let hasVelocityVariation = false;
+    let firstVel = null;
+
+    for (let i = 0; i < steps; i++) {
+      const stepNotes = grid[i];
+      if (!stepNotes || Object.keys(stepNotes).length === 0) {
+        gainSteps.push('~');
+      } else {
+        const entries = Object.entries(stepNotes);
+        const maxVel = entries.length === 1 ? entries[0][1] : Math.max(...entries.map(([, v]) => v));
+        const g = VELOCITY_GAIN[maxVel];
+        gainSteps.push(g.toFixed(2));
+        if (firstVel === null) firstVel = g;
+        else if (Math.abs(g - firstVel) > 0.01) hasVelocityVariation = true;
+      }
+    }
+
+    if (!hasVelocityVariation && firstVel !== null) {
+      return Math.abs(firstVel - 1) > 0.01 ? { type: 'single', value: firstVel } : null;
+    }
+
+    return { type: 'array', pattern: gainSteps.join(' ') };
+  }, [grid, steps]);
+
+  // Update preview code
   useEffect(() => {
     setPreviewCode(generateCode());
-  }, [grid, synth, generateCode]);
+  }, [generateCode]);
 
   // Step animation during preview
   useEffect(() => {
@@ -203,50 +824,160 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     };
   }, [isPreviewPlaying, steps, bpm]);
 
-  // Toggle note on step
-  const toggleStep = (stepIndex) => {
+  // --- Cell toggle ---
+  // Click cycles: off -> soft(1) -> medium(2) -> hard(3) -> off
+  const toggleCell = (stepIndex, noteKey) => {
     setGrid(prev => {
-      const newGrid = [...prev];
-      if (newGrid[stepIndex]) {
-        // Clear if already has note
-        newGrid[stepIndex] = null;
+      const newGrid = { ...prev };
+      const stepNotes = newGrid[stepIndex] ? { ...newGrid[stepIndex] } : {};
+      const currentVel = stepNotes[noteKey] || 0;
+      const nextVel = (currentVel + 1) % 4;
+
+      if (nextVel === 0) {
+        delete stepNotes[noteKey];
       } else {
-        // Add selected note
-        newGrid[stepIndex] = { note: selectedNote, octave: selectedOctave };
+        stepNotes[noteKey] = nextVel;
+      }
+
+      if (Object.keys(stepNotes).length === 0) {
+        delete newGrid[stepIndex];
+      } else {
+        newGrid[stepIndex] = stepNotes;
       }
       return newGrid;
     });
   };
 
-  // Set specific note on step (right-click or long press could use this)
-  const setStepNote = (stepIndex, note, octave) => {
+  // --- Pattern operations ---
+  const shiftLeft = () => {
     setGrid(prev => {
-      const newGrid = [...prev];
-      newGrid[stepIndex] = { note, octave };
+      const newGrid = {};
+      Object.entries(prev).forEach(([step, notes]) => {
+        const newStep = (parseInt(step) - 1 + steps) % steps;
+        newGrid[newStep] = notes;
+      });
       return newGrid;
     });
   };
 
-  // Change octave for a step
-  const changeStepOctave = (stepIndex, delta) => {
+  const shiftRight = () => {
     setGrid(prev => {
-      const newGrid = [...prev];
-      if (newGrid[stepIndex]) {
-        const newOctave = Math.max(1, Math.min(6, newGrid[stepIndex].octave + delta));
-        newGrid[stepIndex] = { ...newGrid[stepIndex], octave: newOctave };
+      const newGrid = {};
+      Object.entries(prev).forEach(([step, notes]) => {
+        const newStep = (parseInt(step) + 1) % steps;
+        newGrid[newStep] = notes;
+      });
+      return newGrid;
+    });
+  };
+
+  const reversePattern = () => {
+    setGrid(prev => {
+      const newGrid = {};
+      Object.entries(prev).forEach(([step, notes]) => {
+        newGrid[steps - 1 - parseInt(step)] = notes;
+      });
+      return newGrid;
+    });
+  };
+
+  // Helper: shift all notes in grid by semitones and auto-fit view
+  const shiftAllNotes = (semitones) => {
+    setGrid(prev => {
+      const newGrid = {};
+      Object.entries(prev).forEach(([step, notes]) => {
+        const newNotes = {};
+        Object.entries(notes).forEach(([noteKey, vel]) => {
+          const shifted = shiftNoteKey(noteKey, semitones);
+          if (shifted) newNotes[shifted] = vel;
+        });
+        if (Object.keys(newNotes).length > 0) newGrid[step] = newNotes;
+      });
+      scrollToNotes(newGrid);
+      return newGrid;
+    });
+  };
+
+  const transposeUp = () => shiftAllNotes(1);
+  const transposeDown = () => shiftAllNotes(-1);
+  const octaveUp = () => shiftAllNotes(12);
+  const octaveDown = () => shiftAllNotes(-12);
+
+  const randomFill = () => {
+    const density = randomDensity / 100;
+    const notes = getVisibleNotes();
+    if (notes.length === 0) return;
+
+    const newGrid = {};
+    // Start from a random note in the middle range
+    let currentIndex = Math.floor(notes.length * 0.3 + Math.random() * notes.length * 0.4);
+
+    for (let i = 0; i < steps; i++) {
+      if (Math.random() < density) {
+        // Melodic movement: mostly small steps (1-2), occasional leaps
+        const leap = Math.random();
+        let move;
+        if (leap < 0.45) move = Math.random() < 0.5 ? -1 : 1;       // step
+        else if (leap < 0.75) move = Math.random() < 0.5 ? -2 : 2;   // third
+        else if (leap < 0.90) move = Math.random() < 0.5 ? -3 : 3;   // fourth
+        else move = Math.floor(Math.random() * 7) - 3;                // larger leap
+
+        currentIndex = Math.max(0, Math.min(notes.length - 1, currentIndex + move));
+        const note = notes[currentIndex];
+
+        // Velocity: beats 1 and 3 tend to be harder
+        let vel;
+        if (i % 4 === 0) vel = 3;
+        else if (i % 4 === 2) vel = Math.random() < 0.6 ? 3 : 2;
+        else vel = Math.random() < 0.3 ? 3 : 2;
+
+        newGrid[i] = { [note.key]: vel };
       }
+    }
+    setGrid(newGrid);
+  };
+
+  const doublePattern = () => {
+    setGrid(prev => {
+      const newGrid = {};
+      const halfLength = Math.floor(steps / 2);
+      Object.entries(prev).forEach(([step, notes]) => {
+        const s = parseInt(step);
+        if (s < halfLength) {
+          newGrid[s] = notes;
+          newGrid[s + halfLength] = { ...notes };
+        }
+      });
       return newGrid;
     });
   };
 
-  // Clear all
   const clearAll = () => {
     if (isPreviewPlaying) {
       stopPreview();
       setIsPreviewPlaying(false);
     }
-    setGrid(Array(steps).fill(null));
+    setGrid({});
   };
+
+  // Helper: shift a note key by semitones
+  function shiftNoteKey(noteKey, semitones) {
+    const match = noteKey.match(/^([a-g]#?)(\d+)$/);
+    if (!match) return null;
+    const noteName = match[1];
+    const octave = parseInt(match[2]);
+    const noteIndex = CHROMATIC_NOTES.indexOf(noteName);
+    if (noteIndex === -1) return null;
+
+    const totalSemitones = noteIndex + octave * 12 + semitones;
+    if (totalSemitones < 0 || totalSemitones > 127) return null;
+
+    const newNoteIndex = ((totalSemitones % 12) + 12) % 12;
+    const newOctave = Math.floor(totalSemitones / 12);
+    if (newOctave < 0 || newOctave > 8) return null;
+
+    return `${CHROMATIC_NOTES[newNoteIndex]}${newOctave}`;
+  }
 
   // Load preset
   const loadPreset = (preset) => {
@@ -255,14 +986,12 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       setIsPreviewPlaying(false);
     }
     setSynth(preset.synth);
-    const newGrid = Array(steps).fill(null);
-    preset.notes.forEach((note, i) => {
-      if (i < steps) newGrid[i] = note;
-    });
+    const newGrid = JSON.parse(JSON.stringify(preset.grid));
     setGrid(newGrid);
+    scrollToNotes(newGrid);
   };
 
-  // Create new track with the generated melodic pattern
+  // Create track
   const applyAsTrack = () => {
     if (isPreviewPlaying) {
       stopPreview();
@@ -279,7 +1008,6 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     const trackId = generateTrackId();
     const clipId = generateClipId();
 
-    // Create new track with a clip containing the melodic pattern
     const newTrack = {
       id: trackId,
       name: 'Melody',
@@ -288,7 +1016,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       solo: false,
       height: 100,
       params: {
-        gain: 0.8, cutoff: 8000, resonance: 0, speed: 1, pan: 0,
+        gain: 1, cutoff: 8000, resonance: 0, speed: 1, pan: 0,
         reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,
         distortion: 0, hpf: 0, phaser: 0, phaserDepth: 0.5,
       },
@@ -300,7 +1028,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         durationBars: 4,
         color,
         layers: [{
-          id: `layer-${Date.now()}`,
+          id: generateId(),
           name: 'Melody',
           code,
           muted: false,
@@ -310,7 +1038,6 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       }],
     };
 
-    // Add track to arrangement
     useStore.setState((state) => ({
       arrangement: {
         ...state.arrangement,
@@ -318,7 +1045,6 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       },
     }));
 
-    // Select the new clip for editing
     setEditingClip(trackId, clipId);
     onClose();
   };
@@ -339,9 +1065,10 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       }
       await initAudio();
 
-      const pattern = generatePattern();
-      if (pattern && pattern !== '~') {
-        const result = await startMelodicPreview(pattern, synth, bpm);
+      const notePattern = generateNotePattern();
+      if (notePattern) {
+        const gainInfo = getGainInfo();
+        const result = await startMelodicPreview(notePattern, synth, bpm, gainInfo);
         if (result.success) {
           setIsPreviewPlaying(true);
           setCurrentStep(0);
@@ -350,14 +1077,15 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     }
   };
 
-  // Update preview when pattern or synth changes during playback
+  // Update preview when grid/synth changes during playback
   useEffect(() => {
     if (isPreviewPlaying) {
-      const pattern = generatePattern();
-      if (pattern && pattern !== '~') {
+      const notePattern = generateNotePattern();
+      if (notePattern) {
         const updatePreviewPattern = async () => {
           stopPreview();
-          const result = await startMelodicPreview(pattern, synth, bpm);
+          const gainInfo = getGainInfo();
+          const result = await startMelodicPreview(notePattern, synth, bpm, gainInfo);
           if (!result.success) {
             setIsPreviewPlaying(false);
           }
@@ -390,7 +1118,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-studio-800 rounded-lg shadow-2xl border border-studio-600 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-studio-800 rounded-lg shadow-2xl border border-studio-600 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 bg-studio-700 border-b border-studio-600">
           <div className="flex items-center gap-3">
@@ -424,7 +1152,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Controls */}
+        {/* Controls bar */}
         <div className="flex items-center gap-4 px-4 py-2 bg-studio-750 border-b border-studio-600 flex-wrap">
           {/* Steps */}
           <div className="flex items-center gap-2">
@@ -442,7 +1170,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
             ))}
           </div>
 
-          {/* Synth selector */}
+          {/* Synth */}
           <div className="flex items-center gap-2 border-l border-studio-600 pl-4">
             <span className="text-xs text-gray-400">Synth:</span>
             <select
@@ -450,16 +1178,65 @@ export default function MelodicSequencer({ isOpen, onClose }) {
               onChange={(e) => setSynth(e.target.value)}
               className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
             >
-              {SYNTHS.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+              {SYNTH_CATEGORIES.map(cat => (
+                <optgroup key={cat} label={cat}>
+                  {SYNTHS.filter(s => s.cat === cat).map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>
 
-          {/* Preset selector */}
+          {/* Key */}
+          <div className="flex items-center gap-2 border-l border-studio-600 pl-4">
+            <span className="text-xs text-gray-400">Key:</span>
+            <select
+              value={rootNote}
+              onChange={(e) => setRootNote(e.target.value)}
+              className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
+            >
+              {CHROMATIC_NOTES.map((n, i) => (
+                <option key={n} value={n}>{CHROMATIC_LABELS[i]}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Scale */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">Scale:</span>
+            <select
+              value={scale}
+              onChange={(e) => setScale(e.target.value)}
+              className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
+            >
+              {Object.entries(SCALE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Octave */}
+          <div className="flex items-center gap-2 border-l border-studio-600 pl-4">
+            <span className="text-xs text-gray-400">Octave:</span>
+            <button
+              onClick={() => setBaseOctave(o => Math.max(1, o - 1))}
+              className="w-5 h-5 bg-studio-600 rounded hover:bg-studio-500 flex items-center justify-center text-gray-300"
+            >
+              <ChevronDown size={12} />
+            </button>
+            <span className="text-xs text-white font-bold w-6 text-center">{baseOctave}-{baseOctave + octaveRange - 1}</span>
+            <button
+              onClick={() => setBaseOctave(o => Math.min(6, o + 1))}
+              className="w-5 h-5 bg-studio-600 rounded hover:bg-studio-500 flex items-center justify-center text-gray-300"
+            >
+              <ChevronUp size={12} />
+            </button>
+          </div>
+
+          {/* Preset */}
           <div className="flex items-center gap-2 border-l border-studio-600 pl-4">
             <RotateCcw size={14} className="text-gray-400" />
-            <span className="text-xs text-gray-400">Preset:</span>
             <select
               onChange={(e) => {
                 const preset = PRESETS.find(p => p.name === e.target.value);
@@ -468,7 +1245,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
               className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
               defaultValue=""
             >
-              <option value="" disabled>Elegir...</option>
+              <option value="" disabled>Preset...</option>
               {PRESETS.map(p => (
                 <option key={p.name} value={p.name}>{p.name}</option>
               ))}
@@ -476,123 +1253,145 @@ export default function MelodicSequencer({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Piano keyboard for note selection */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-studio-700 border-b border-studio-600">
-          <span className="text-xs text-gray-400 mr-2">Nota:</span>
-          <div className="flex gap-1">
-            {NOTES.map((note, i) => (
-              <button
-                key={note}
-                onClick={() => setSelectedNote(note)}
-                className={`w-8 h-10 rounded text-xs font-bold transition-all ${
-                  selectedNote === note
-                    ? 'ring-2 ring-white scale-110'
-                    : 'hover:scale-105'
-                }`}
-                style={{
-                  backgroundColor: NOTE_COLORS[note],
-                  color: ['e', 'f'].includes(note) ? '#000' : '#fff'
-                }}
-              >
-                {NOTE_LABELS[i]}
-              </button>
-            ))}
-          </div>
+        {/* Pattern operations toolbar */}
+        <div className="flex items-center gap-1 px-4 py-1.5 bg-studio-750 border-b border-studio-600 flex-wrap">
+          <span className="text-xs text-gray-500 mr-1">Pattern:</span>
+          <button onClick={shiftLeft} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Shift Left">
+            <ChevronLeft size={11} /> Shift L
+          </button>
+          <button onClick={shiftRight} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Shift Right">
+            Shift R <ChevronRight size={11} />
+          </button>
+          <button onClick={reversePattern} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500" title="Reverse">
+            &#8596; Reverse
+          </button>
 
-          <div className="flex items-center gap-2 border-l border-studio-600 pl-4 ml-2">
-            <span className="text-xs text-gray-400">Octava:</span>
-            <button
-              onClick={() => setSelectedOctave(o => Math.max(1, o - 1))}
-              className="w-6 h-6 bg-studio-600 rounded hover:bg-studio-500 flex items-center justify-center"
-            >
-              <ChevronDown size={14} />
-            </button>
-            <span className="w-6 text-center text-white font-bold">{selectedOctave}</span>
-            <button
-              onClick={() => setSelectedOctave(o => Math.min(6, o + 1))}
-              className="w-6 h-6 bg-studio-600 rounded hover:bg-studio-500 flex items-center justify-center"
-            >
-              <ChevronUp size={14} />
-            </button>
-          </div>
+          <div className="w-px h-4 bg-studio-600 mx-1" />
 
-          <div className="ml-4 px-3 py-1 bg-studio-600 rounded text-sm font-mono" style={{ color: NOTE_COLORS[selectedNote] }}>
-            {selectedNote.toUpperCase()}{selectedOctave}
-          </div>
+          <button onClick={transposeUp} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Transpose Up (semitone)">
+            <ArrowUp size={11} /> Semi
+          </button>
+          <button onClick={transposeDown} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Transpose Down (semitone)">
+            <ArrowDown size={11} /> Semi
+          </button>
+          <button onClick={octaveUp} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Octave Up">
+            <ArrowUp size={11} /> Oct
+          </button>
+          <button onClick={octaveDown} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Octave Down">
+            <ArrowDown size={11} /> Oct
+          </button>
+
+          <div className="w-px h-4 bg-studio-600 mx-1" />
+
+          <button onClick={doublePattern} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500" title="Copy first half to second half">
+            Double
+          </button>
+
+          <div className="w-px h-4 bg-studio-600 mx-1" />
+
+          <span className="text-xs text-gray-500">Density:</span>
+          <input
+            type="range"
+            min={20}
+            max={90}
+            value={randomDensity}
+            onChange={(e) => setRandomDensity(Number(e.target.value))}
+            className="w-14 h-1 accent-purple-400"
+          />
+          <span className="text-xs text-purple-400 w-6">{randomDensity}%</span>
+          <button onClick={randomFill} className="px-2 py-0.5 text-xs bg-purple-600/50 text-purple-200 rounded hover:bg-purple-600 flex items-center gap-1" title="Random Fill (in-scale)">
+            <Shuffle size={11} /> Random
+          </button>
         </div>
 
-        {/* Grid */}
-        <div className="flex-1 overflow-auto p-4">
-          {/* Step numbers */}
-          <div className="flex mb-2">
-            <div className="flex gap-1">
-              {Array.from({ length: steps }, (_, i) => (
-                <div
-                  key={i}
-                  className={`w-12 h-5 flex items-center justify-center text-xs ${
-                    i % 4 === 0 ? 'text-gray-400' : 'text-gray-600'
-                  } ${currentStep === i && isPreviewPlaying ? 'text-accent-primary font-bold' : ''}`}
-                >
-                  {i + 1}
-                </div>
-              ))}
+        {/* Piano Roll Grid */}
+        <div className="flex-1 overflow-auto" ref={gridRef}>
+          <div className="min-w-max p-4">
+            {/* Step numbers header */}
+            <div className="flex mb-1">
+              <div className="w-16 flex-shrink-0" />
+              <div className="flex">
+                {Array.from({ length: steps }, (_, i) => (
+                  <div
+                    key={i}
+                    className={`w-7 h-5 flex items-center justify-center text-xs ${
+                      i % 4 === 0 ? 'text-gray-400' : 'text-gray-600'
+                    } ${currentStep === i && isPreviewPlaying ? 'text-accent-primary font-bold' : ''} ${
+                      i > 0 && i % 4 === 0 ? 'ml-1.5' : ''
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Note grid */}
-          <div className="flex gap-1">
-            {grid.map((cell, stepIndex) => {
-              const isBeat = stepIndex % 4 === 0;
-              const isCurrentStepActive = currentStep === stepIndex && isPreviewPlaying;
+            {/* Note rows (high to low) */}
+            {displayNotes.map((note) => {
+              const isBlack = BLACK_KEYS.has(note.name);
+              const label = `${note.name.toUpperCase()}${note.octave}`;
 
               return (
-                <div key={stepIndex} className="flex flex-col gap-1">
-                  {/* Main cell */}
-                  <button
-                    onClick={() => toggleStep(stepIndex)}
-                    className={`w-12 h-14 rounded transition-all flex flex-col items-center justify-center ${
-                      cell
-                        ? 'shadow-lg'
-                        : isBeat
-                        ? 'bg-studio-600 hover:bg-studio-500'
-                        : 'bg-studio-700 hover:bg-studio-600'
-                    } ${isCurrentStepActive ? 'ring-2 ring-white ring-opacity-80' : ''}`}
-                    style={{
-                      backgroundColor: cell ? NOTE_COLORS[cell.note] : undefined,
-                      boxShadow: cell ? `0 0 12px ${NOTE_COLORS[cell.note]}50` : undefined
-                    }}
+                <div key={note.key} className="flex items-center">
+                  {/* Piano key label */}
+                  <div
+                    className={`w-16 flex-shrink-0 flex items-center justify-end pr-2 h-7 ${
+                      isBlack
+                        ? 'bg-studio-900 text-gray-400'
+                        : 'bg-studio-800 text-gray-300'
+                    }`}
                   >
-                    {cell && (
-                      <>
-                        <span className="text-sm font-bold text-white drop-shadow">
-                          {cell.note.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-white/80">
-                          {cell.octave}
-                        </span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Octave controls for filled cells */}
-                  {cell && (
-                    <div className="flex gap-0.5">
-                      <button
-                        onClick={() => changeStepOctave(stepIndex, -1)}
-                        className="flex-1 h-4 bg-studio-600 rounded-sm hover:bg-studio-500 flex items-center justify-center"
-                        disabled={cell.octave <= 1}
-                      >
-                        <ChevronDown size={10} />
-                      </button>
-                      <button
-                        onClick={() => changeStepOctave(stepIndex, 1)}
-                        className="flex-1 h-4 bg-studio-600 rounded-sm hover:bg-studio-500 flex items-center justify-center"
-                        disabled={cell.octave >= 6}
-                      >
-                        <ChevronUp size={10} />
-                      </button>
+                    <div className="flex items-center gap-1">
+                      <div
+                        className="w-1.5 h-4 rounded-sm"
+                        style={{ backgroundColor: note.color }}
+                      />
+                      <span className="text-xs font-mono">{label}</span>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Step cells for this note */}
+                  <div className="flex">
+                    {Array.from({ length: steps }, (_, stepIndex) => {
+                      const stepNotes = grid[stepIndex];
+                      const vel = stepNotes?.[note.key] || 0;
+                      const isBeat = stepIndex % 4 === 0;
+                      const isCurrentCol = currentStep === stepIndex && isPreviewPlaying;
+                      const hasBeatGap = stepIndex > 0 && stepIndex % 4 === 0;
+
+                      return (
+                        <button
+                          key={stepIndex}
+                          onClick={() => toggleCell(stepIndex, note.key)}
+                          className={`w-7 h-7 transition-all relative flex items-center justify-center border-b border-r ${
+                            isBlack ? 'border-studio-900/50' : 'border-studio-700/50'
+                          } ${
+                            vel > 0
+                              ? 'shadow-inner'
+                              : isCurrentCol
+                              ? isBlack ? 'bg-white/10' : 'bg-white/5'
+                              : isBeat
+                              ? isBlack ? 'bg-studio-700 hover:bg-studio-600' : 'bg-studio-650 hover:bg-studio-600'
+                              : isBlack ? 'bg-studio-800 hover:bg-studio-700' : 'bg-studio-750 hover:bg-studio-700'
+                          } ${isCurrentCol && vel === 0 ? 'ring-1 ring-inset ring-accent-primary/30' : ''} ${
+                            hasBeatGap ? 'ml-1.5' : ''
+                          }`}
+                          style={vel > 0 ? {
+                            backgroundColor: hexToRgba(note.color, [0, 0.45, 0.70, 1.0][vel]),
+                            boxShadow: vel === 3 ? `0 0 6px ${note.color}40` : undefined,
+                          } : undefined}
+                        >
+                          {vel > 0 && (
+                            <div className="flex gap-px">
+                              {Array.from({ length: vel }, (_, k) => (
+                                <div key={k} className="w-0.5 h-2 bg-white/80 rounded-full" />
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
@@ -603,7 +1402,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         <div className="border-t border-studio-600 bg-studio-700 p-3">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <div className="text-xs text-gray-400 mb-1">Codigo generado:</div>
+              <div className="text-xs text-gray-400 mb-1">Generated code:</div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 px-3 py-2 bg-studio-900 rounded text-accent-tertiary font-mono text-xs overflow-x-auto max-h-16">
                   {previewCode}
@@ -611,7 +1410,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                 <button
                   onClick={copyCode}
                   className="p-2 bg-studio-600 text-gray-300 rounded hover:bg-studio-500"
-                  title="Copiar"
+                  title="Copy"
                 >
                   <Copy size={16} />
                 </button>

@@ -1,9 +1,6 @@
 import { create } from 'zustand';
-
-// Generate unique IDs
-const generateId = () => `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-const generateTrackId = () => `track-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-const generateClipId = () => `clip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+import { generateId, generateTrackId, generateClipId } from '../utils/id';
+import { createUndoMiddleware } from './undoMiddleware';
 
 // Default parameters for a layer
 const defaultLayerParams = {
@@ -128,7 +125,7 @@ const createInitialArrangement = () => {
   };
 };
 
-export const useStore = create((set, get) => ({
+export const useStore = create(createUndoMiddleware((set, get) => ({
   // Transport state
   isPlaying: false,
   bpm: 120,
@@ -830,4 +827,4 @@ export const useStore = create((set, get) => ({
     }
     return null;
   },
-}));
+})));

@@ -3,20 +3,20 @@ import { X } from 'lucide-react';
 import { getAnalyser } from '../../strudel/engine';
 
 const MODES = [
-  { id: 'bars', name: 'Barras' },
-  { id: 'wave', name: 'Onda' },
-  { id: 'circle', name: 'Circular' },
+  { id: 'bars', name: 'Bars' },
+  { id: 'wave', name: 'Wave' },
+  { id: 'circle', name: 'Circle' },
   { id: 'starburst', name: 'Starburst' },
-  { id: 'tunnel', name: 'Tunel' },
+  { id: 'tunnel', name: 'Tunnel' },
   { id: 'nebula', name: 'Nebula' },
 ];
 
 const COLORS = [
   { id: 'neon', name: 'Neon', colors: ['#ff00ff', '#00ffff', '#ff0080', '#00ff80'], bg: '#0a0014' },
-  { id: 'fire', name: 'Fuego', colors: ['#ff0000', '#ff6600', '#ffcc00', '#ff3300'], bg: '#1a0500' },
-  { id: 'ocean', name: 'Oceano', colors: ['#0066ff', '#00ccff', '#0099cc', '#003366'], bg: '#000a14' },
+  { id: 'fire', name: 'Fire', colors: ['#ff0000', '#ff6600', '#ffcc00', '#ff3300'], bg: '#1a0500' },
+  { id: 'ocean', name: 'Ocean', colors: ['#0066ff', '#00ccff', '#0099cc', '#003366'], bg: '#000a14' },
   { id: 'matrix', name: 'Matrix', colors: ['#00ff41', '#00cc33', '#009922', '#00ff00'], bg: '#000800' },
-  { id: 'sunset', name: 'Atardecer', colors: ['#ff006a', '#ff7b00', '#ffcc00', '#ff3366'], bg: '#1a0011' },
+  { id: 'sunset', name: 'Sunset', colors: ['#ff006a', '#ff7b00', '#ffcc00', '#ff3366'], bg: '#1a0011' },
   { id: 'cyber', name: 'Cyber', colors: ['#ff00ff', '#8800ff', '#0088ff', '#00ffff'], bg: '#05000a' },
 ];
 
@@ -621,7 +621,7 @@ export default function Visualizer({ isOpen, onClose }) {
 
           {/* Sensitivity */}
           <div className="flex items-center gap-2 ml-2">
-            <span className="text-xs text-gray-400">Intensidad</span>
+            <span className="text-xs text-gray-400">Intensity</span>
             <input
               type="range"
               min="0.5"
@@ -637,10 +637,10 @@ export default function Visualizer({ isOpen, onClose }) {
         <div className="flex items-center gap-3">
           {!hasAudio && (
             <span className="text-xs text-yellow-500 animate-pulse">
-              Demo mode - Dale Play para sincronizar
+              Demo mode - Press Play to sync
             </span>
           )}
-          <span className="text-xs text-gray-500">ESC para cerrar</span>
+          <span className="text-xs text-gray-500">ESC to close</span>
           <button
             onClick={onClose}
             className="p-1.5 bg-red-600/80 text-white rounded hover:bg-red-500 transition-colors"

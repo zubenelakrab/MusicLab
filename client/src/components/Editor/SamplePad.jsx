@@ -257,7 +257,7 @@ function VariantPopup({ sample, position, onClose, onInsert }) {
           className="w-full px-3 py-1.5 text-sm bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center justify-center gap-1.5 font-medium"
         >
           <ChevronRight size={14} />
-          Insertar {sample}:{selectedVariant}
+          Insert {sample}:{selectedVariant}
         </button>
       </div>
     </div>,
@@ -293,7 +293,7 @@ function SampleButton({ sample, desc, onInsert, onOpenVariants }) {
     <button
       onClick={handleClick}
       onContextMenu={handleRightClick}
-      title={desc || (hasVariants ? `${sample} (${variantCount} variantes)` : sample)}
+      title={desc || (hasVariants ? `${sample} (${variantCount} variants)` : sample)}
       className={`
         relative px-2 py-2 text-xs rounded transition-all truncate text-left
         ${isPlaying
@@ -423,7 +423,7 @@ export default function SamplePad() {
             {/* Operators with tooltips */}
             <div>
               <h4 className="text-xs text-gray-500 uppercase mb-2">
-                Operadores <span className="text-gray-600">(hover = info)</span>
+                Operators <span className="text-gray-600">(hover = info)</span>
               </h4>
               <div className="flex flex-wrap gap-1">
                 {OPERATORS.map((op) => (
@@ -462,7 +462,7 @@ export default function SamplePad() {
             {/* Direct sample list - ALL samples alphabetically */}
             <div>
               <h4 className="text-xs text-gray-500 uppercase mb-2">
-                Todos A-Z ({SAMPLE_NAMES.length})
+                All A-Z ({SAMPLE_NAMES.length})
               </h4>
               <div className="grid grid-cols-4 gap-1 max-h-64 overflow-y-auto">
                 {SAMPLE_NAMES.sort().map((sample) => (

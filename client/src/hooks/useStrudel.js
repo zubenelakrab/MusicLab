@@ -11,12 +11,13 @@ export function useStrudel() {
     bpm,
     arrangement,
     patterns,
+    _arrangementVersion,
     setPlaying,
     setPlayheadPosition,
   } = useStore();
 
-  // Track arrangement for change detection
-  const lastArrangementRef = useRef(JSON.stringify(arrangement));
+  // Track arrangement for change detection (version-based)
+  const lastVersionRef = useRef(_arrangementVersion);
 
   const initializeAudio = useCallback(async () => {
     try {
@@ -146,12 +147,10 @@ export function useStrudel() {
 
   // Sync other arrangement changes in real-time (excluding loop toggle)
   useEffect(() => {
-    const arrangementJson = JSON.stringify(arrangement);
-
-    if (audioReady && isPlaying && arrangementJson !== lastArrangementRef.current) {
+    if (audioReady && isPlaying && _arrangementVersion !== lastVersionRef.current) {
       // Skip if this was triggered by loop change (handled above)
       if (arrangement.loopEnabled === lastLoopEnabledRef.current) {
-        lastArrangementRef.current = arrangementJson;
+        lastVersionRef.current = _arrangementVersion;
 
         if (hasClipsToPlay()) {
           engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
@@ -163,14 +162,15 @@ export function useStrudel() {
           });
         }
       }
-      lastArrangementRef.current = arrangementJson;
+      lastVersionRef.current = _arrangementVersion;
     }
-  }, [arrangement, patterns, audioReady, isPlaying, bpm, hasClipsToPlay]);
+  }, [_arrangementVersion, arrangement, patterns, audioReady, isPlaying, bpm, hasClipsToPlay]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       engine.stop();
+      engine.cleanupAudio();
     };
   }, []);
 

@@ -21,7 +21,7 @@ export default function LayerEditor() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-3 py-2 bg-studio-700 border-b border-studio-600 flex items-center justify-between">
-        <span className="text-sm text-gray-400">Capas</span>
+        <span className="text-sm text-gray-400">Layers</span>
         <button
           onClick={() => addLayer()}
           className="text-xs px-2 py-1 bg-accent-primary text-black rounded hover:bg-accent-primary/80 transition-colors"
@@ -107,13 +107,13 @@ export default function LayerEditor() {
       {selectedLayer && (
         <div className="flex-1 overflow-y-auto p-3 space-y-4">
           <div className="text-xs text-gray-500 uppercase mb-2">
-            Parametros: {selectedLayer.name}
+            Parameters: {selectedLayer.name}
           </div>
 
           {/* Gain */}
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-gray-400">Volumen</span>
+              <span className="text-gray-400">Volume</span>
               <span className="text-accent-primary">
                 {Math.round((selectedLayer.params.gain || 0.8) * 100)}%
               </span>
@@ -168,7 +168,7 @@ export default function LayerEditor() {
           {/* Cutoff */}
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-gray-400">Filtro (Cutoff)</span>
+              <span className="text-gray-400">Filter (Cutoff)</span>
               <span className="text-accent-primary">
                 {Math.round(selectedLayer.params.cutoff || 8000)} Hz
               </span>
@@ -185,7 +185,7 @@ export default function LayerEditor() {
           {/* Resonance */}
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-gray-400">Resonancia</span>
+              <span className="text-gray-400">Resonance</span>
               <span className="text-accent-primary">
                 {Math.round(selectedLayer.params.resonance || 0)}
               </span>
@@ -201,9 +201,9 @@ export default function LayerEditor() {
 
           {/* Code preview */}
           <div className="mt-4 p-2 bg-studio-900 rounded">
-            <div className="text-xs text-gray-500 mb-1">Codigo:</div>
+            <div className="text-xs text-gray-500 mb-1">Code:</div>
             <code className="text-xs text-accent-tertiary break-all">
-              {selectedLayer.code || '(vacio)'}
+              {selectedLayer.code || '(empty)'}
             </code>
           </div>
         </div>

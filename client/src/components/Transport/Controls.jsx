@@ -35,7 +35,7 @@ export default function Controls() {
             ? 'bg-accent-secondary hover:bg-red-500'
             : 'bg-accent-primary hover:bg-emerald-400'
         }`}
-        title={isPlaying ? 'Detener' : 'Reproducir'}
+        title={isPlaying ? 'Stop' : 'Play'}
       >
         {isPlaying ? (
           <Square size={14} fill="currentColor" />
@@ -53,7 +53,7 @@ export default function Controls() {
             ? 'bg-red-600 hover:bg-red-500 animate-pulse'
             : 'bg-studio-600 hover:bg-studio-500'
         } ${!audioReady ? 'opacity-50 cursor-not-allowed' : ''}`}
-        title={isRecording ? 'Detener grabacion' : 'Grabar'}
+        title={isRecording ? 'Stop recording' : 'Record'}
       >
         <Circle
           size={14}
@@ -77,7 +77,7 @@ export default function Controls() {
             onClick={() => download('wav')}
             disabled={isConverting}
             className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500 flex items-center gap-1 disabled:opacity-50"
-            title="Descargar como WAV"
+            title="Download as WAV"
           >
             {isConverting ? (
               <Loader2 size={12} className="animate-spin" />
@@ -89,7 +89,7 @@ export default function Controls() {
           <button
             onClick={() => download('webm')}
             className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 flex items-center gap-1"
-            title="Descargar como WebM"
+            title="Download as WebM"
           >
             <Download size={12} />
             WebM
@@ -97,7 +97,7 @@ export default function Controls() {
           <button
             onClick={clear}
             className="px-1 py-1 text-xs bg-studio-600 text-gray-400 rounded hover:bg-red-600 hover:text-white"
-            title="Descartar grabacion"
+            title="Discard recording"
           >
             <X size={12} />
           </button>
