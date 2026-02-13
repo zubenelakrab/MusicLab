@@ -30,10 +30,10 @@ export default function Controls() {
       {/* Play/Stop button */}
       <button
         onClick={toggle}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
           isPlaying
-            ? 'bg-accent-secondary hover:bg-red-500'
-            : 'bg-accent-primary hover:bg-emerald-400'
+            ? 'bg-accent-secondary hover:bg-red-500 shadow-glow-secondary animate-glow-pulse'
+            : 'bg-accent-primary hover:bg-emerald-400 shadow-glow-primary'
         }`}
         title={isPlaying ? 'Stop' : 'Play'}
       >
@@ -48,9 +48,9 @@ export default function Controls() {
       <button
         onClick={handleRecordClick}
         disabled={!audioReady}
-        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
           isRecording
-            ? 'bg-red-600 hover:bg-red-500 animate-pulse'
+            ? 'bg-red-600 hover:bg-red-500 animate-glow-pulse shadow-glow-secondary'
             : 'bg-studio-600 hover:bg-studio-500'
         } ${!audioReady ? 'opacity-50 cursor-not-allowed' : ''}`}
         title={isRecording ? 'Stop recording' : 'Record'}
@@ -76,7 +76,7 @@ export default function Controls() {
           <button
             onClick={() => download('wav')}
             disabled={isConverting}
-            className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500 flex items-center gap-1 disabled:opacity-50"
+            className="btn-pro px-2 py-1 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-500 flex items-center gap-1 disabled:opacity-50"
             title="Download as WAV"
           >
             {isConverting ? (
@@ -88,7 +88,7 @@ export default function Controls() {
           </button>
           <button
             onClick={() => download('webm')}
-            className="px-2 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 flex items-center gap-1"
+            className="btn-pro px-2 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-500 flex items-center gap-1"
             title="Download as WebM"
           >
             <Download size={12} />
@@ -106,14 +106,14 @@ export default function Controls() {
 
       {/* BPM controls */}
       <div className="flex items-center gap-2 border-l border-studio-600 pl-3">
-        <span className="text-xs text-gray-500">BPM</span>
+        <span className="text-xs text-gray-500 font-medium">BPM</span>
         <input
           type="number"
           value={bpm}
           onChange={(e) => setBpm(Number(e.target.value))}
           min={40}
           max={300}
-          className="w-14 px-1 py-0.5 bg-studio-700 border border-studio-600 rounded text-center text-white text-sm"
+          className="input-pro w-14 px-1 py-0.5 rounded text-center text-white text-sm font-mono font-bold"
         />
         <input
           type="range"

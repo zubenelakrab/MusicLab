@@ -29,11 +29,11 @@ export default function App() {
   usePersistence();
 
   return (
-    <div className="h-screen flex flex-col bg-studio-900">
+    <div className="h-screen flex flex-col bg-gradient-to-b from-studio-900 to-studio-950">
       {/* Header with controls */}
-      <header className="flex items-center justify-between px-4 py-2 bg-studio-800 border-b border-studio-600">
+      <header className="flex items-center justify-between px-4 py-2 pro-header border-b border-white/[0.04]">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold text-accent-primary">MusicLab</h1>
+          <h1 className="text-lg font-bold bg-gradient-to-r from-accent-primary to-accent-tertiary bg-clip-text text-transparent tracking-wider">MusicLab</h1>
           <Controls />
           <div className="border-l border-studio-600 pl-4">
             <FileManager />
@@ -41,7 +41,7 @@ export default function App() {
           <div className="border-l border-studio-600 pl-4 flex items-center gap-2">
             <button
               onClick={() => setShowSequencer(true)}
-              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-400 hover:to-blue-500 flex items-center gap-1.5"
               title="Step Sequencer (Drums)"
             >
               <Grid3X3 size={14} />
@@ -49,7 +49,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowMelodic(true)}
-              className="px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-500 transition-colors flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-400 hover:to-orange-500 flex items-center gap-1.5"
               title="Melodic Sequencer"
             >
               <Music size={14} />
@@ -57,7 +57,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowSamples(true)}
-              className="px-3 py-1 text-xs bg-teal-600 text-white rounded hover:bg-teal-500 transition-colors flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-400 hover:to-teal-500 flex items-center gap-1.5"
               title="Sample Browser"
             >
               <Layers size={14} />
@@ -65,7 +65,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowEffects(true)}
-              className="px-3 py-1 text-xs bg-cyan-600 text-white rounded hover:bg-cyan-500 transition-colors flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-400 hover:to-cyan-500 flex items-center gap-1.5"
               title="Effects Rack"
             >
               <Sliders size={14} />
@@ -73,7 +73,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setShowVisualizer(true)}
-              className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-400 hover:to-purple-500 flex items-center gap-1.5"
               title="Open Visualizer"
             >
               <Sparkles size={14} />
@@ -105,7 +105,7 @@ export default function App() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar - Pattern Library */}
-        <aside className="w-64 flex-shrink-0 border-r border-studio-600 bg-studio-800 overflow-hidden flex flex-col">
+        <aside className="w-64 flex-shrink-0 border-r border-white/[0.04] bg-gradient-panel overflow-hidden flex flex-col">
           <PatternList />
         </aside>
 

@@ -53,9 +53,9 @@ export default function Timeline() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-studio-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-gradient-panel overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
+      <div className="flex items-center justify-between px-3 py-2 pro-header">
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-400">Layers</span>
           {isPlaying && (
@@ -66,7 +66,7 @@ export default function Timeline() {
         </div>
         <button
           onClick={() => addLayer()}
-          className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 flex items-center gap-1"
+          className="btn-pro px-2 py-1 text-xs bg-accent-primary text-black rounded-lg hover:bg-emerald-400 flex items-center gap-1"
         >
           <Plus size={14} />
           <span>Layer</span>
@@ -112,7 +112,7 @@ export default function Timeline() {
                           e.stopPropagation();
                           toggleLayerMute(index);
                         }}
-                        className={`w-5 h-5 rounded flex items-center justify-center ${
+                        className={`btn-pro w-5 h-5 rounded flex items-center justify-center ${
                           layer.muted
                             ? 'bg-red-600 text-white'
                             : 'bg-studio-500 text-gray-400 hover:bg-studio-400'
@@ -126,7 +126,7 @@ export default function Timeline() {
                           e.stopPropagation();
                           toggleLayerSolo(index);
                         }}
-                        className={`w-5 h-5 rounded flex items-center justify-center ${
+                        className={`btn-pro w-5 h-5 rounded flex items-center justify-center ${
                           layer.solo
                             ? 'bg-yellow-500 text-black'
                             : 'bg-studio-500 text-gray-400 hover:bg-studio-400'
@@ -140,7 +140,7 @@ export default function Timeline() {
                           e.stopPropagation();
                           openEffectsForLayer(index);
                         }}
-                        className={`w-5 h-5 rounded flex items-center justify-center ${
+                        className={`btn-pro w-5 h-5 rounded flex items-center justify-center ${
                           hasActiveEffects(layer)
                             ? 'bg-cyan-500 text-black'
                             : 'bg-studio-500 text-gray-400 hover:bg-cyan-600 hover:text-white'
@@ -181,7 +181,7 @@ export default function Timeline() {
                           !isActive ? 'opacity-30' : 'opacity-80'
                         }`}
                       >
-                        <span className="text-sm text-black font-mono truncate">
+                        <span className="text-sm text-black font-mono truncate font-medium">
                           {layer.code}
                         </span>
                       </div>
@@ -210,7 +210,7 @@ export default function Timeline() {
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Volume</span>
-                <span className="text-accent-primary">
+                <span className="text-accent-primary font-mono">
                   {Math.round((selectedLayer.params?.gain ?? 0.8) * 100)}%
                 </span>
               </div>
@@ -229,7 +229,7 @@ export default function Timeline() {
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Pan</span>
-                <span className="text-accent-primary">
+                <span className="text-accent-primary font-mono">
                   {(selectedLayer.params?.pan ?? 0) === 0
                     ? 'C'
                     : (selectedLayer.params?.pan ?? 0) < 0
@@ -252,7 +252,7 @@ export default function Timeline() {
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Speed</span>
-                <span className="text-accent-primary">
+                <span className="text-accent-primary font-mono">
                   {(selectedLayer.params?.speed ?? 1).toFixed(2)}x
                 </span>
               </div>
@@ -271,7 +271,7 @@ export default function Timeline() {
             <div className="mb-3">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Filter</span>
-                <span className="text-accent-primary">
+                <span className="text-accent-primary font-mono">
                   {Math.round(selectedLayer.params?.cutoff ?? 8000)} Hz
                 </span>
               </div>
@@ -290,7 +290,7 @@ export default function Timeline() {
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-gray-400">Resonance</span>
-                <span className="text-accent-primary">
+                <span className="text-accent-primary font-mono">
                   {Math.round(selectedLayer.params?.resonance ?? 0)}
                 </span>
               </div>

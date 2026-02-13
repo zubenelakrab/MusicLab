@@ -17,7 +17,7 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-full p-4 bg-studio-800 text-gray-300">
+        <div className="flex flex-col items-center justify-center h-full p-4 glass-panel text-gray-300">
           <p className="text-sm text-red-400 mb-2">
             Something went wrong{this.props.name ? ` in ${this.props.name}` : ''}.
           </p>
@@ -26,7 +26,7 @@ export default class ErrorBoundary extends Component {
           </p>
           <button
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="px-3 py-1.5 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400"
+            className="btn-pro px-3 py-1.5 text-xs bg-accent-primary text-black rounded-lg hover:bg-emerald-400"
           >
             Try Again
           </button>

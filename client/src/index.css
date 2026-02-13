@@ -2,31 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === CSS Custom Properties === */
+:root {
+  --accent-primary: #00d4aa;
+  --accent-secondary: #ff6b6b;
+  --accent-tertiary: #4ecdc4;
+  --studio-900: #0d0d0d;
+  --studio-800: #1a1a1a;
+  --studio-700: #2a2a2a;
+  --studio-600: #3a3a3a;
+}
+
 body {
   margin: 0;
   background-color: #0d0d0d;
   color: #e0e0e0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* === Reusable Utility Classes === */
+@layer components {
+  .glass-panel {
+    background: rgba(26, 26, 26, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+  }
+
+  .pro-header {
+    background: linear-gradient(180deg, #2a2a2a 0%, #222222 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .glow-border {
+    border: 1px solid rgba(58, 58, 58, 1);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .glow-border:hover {
+    border-color: rgba(0, 212, 170, 0.3);
+    box-shadow: 0 0 8px rgba(0, 212, 170, 0.1);
+  }
+
+  .btn-pro {
+    position: relative;
+    transition: all 0.15s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  .btn-pro:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  .btn-pro:active {
+    transform: translateY(0);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .input-pro {
+    background: #1a1a1a;
+    border: 1px solid #3a3a3a;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .input-pro:focus {
+    border-color: rgba(0, 212, 170, 0.5);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(0, 212, 170, 0.1);
+    outline: none;
+  }
+}
+
+/* === Custom Range Slider === */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 20px;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #3a3a3a;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  margin-top: -5px;
+  box-shadow: 0 0 6px rgba(0, 212, 170, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.6);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #3a3a3a;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: none;
+  box-shadow: 0 0 6px rgba(0, 212, 170, 0.4);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.6);
+}
+
+/* Purple accent range sliders */
+input[type="range"].accent-purple-400::-webkit-slider-thumb {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
+}
+input[type="range"].accent-purple-400:hover::-webkit-slider-thumb {
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+}
+input[type="range"].accent-purple-400::-moz-range-thumb {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.4);
+}
+
+/* === Scrollbar Styling === */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 4px;
+  background: #3a3a3a;
+  border-radius: 3px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #5a5a5a;
+  background: #4a4a4a;
+  box-shadow: 0 0 4px rgba(0, 212, 170, 0.2);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
 }

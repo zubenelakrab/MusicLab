@@ -1117,15 +1117,15 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-studio-800 rounded-lg shadow-2xl border border-studio-600 w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-gradient-to-b from-studio-800 to-studio-900 rounded-2xl shadow-panel border border-white/[0.06] animate-scale-in w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 bg-studio-700 border-b border-studio-600">
+        <div className="flex items-center justify-between px-4 py-2 pro-header bg-gradient-modal">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-white">Melodic Sequencer</h2>
             <button
               onClick={togglePreview}
-              className={`px-3 py-1.5 text-sm rounded flex items-center gap-2 transition-colors ${
+              className={`btn-pro px-3 py-1.5 text-sm rounded-lg flex items-center gap-2 transition-colors ${
                 isPreviewPlaying
                   ? 'bg-red-600 text-white hover:bg-red-500'
                   : 'bg-accent-primary text-black hover:bg-emerald-400'
@@ -1141,19 +1141,19 @@ export default function MelodicSequencer({ isOpen, onClose }) {
           <div className="flex items-center gap-2">
             <button
               onClick={clearAll}
-              className="px-2 py-1 text-xs bg-red-600/50 text-red-200 rounded hover:bg-red-600 flex items-center gap-1"
+              className="btn-pro px-2 py-1 text-xs bg-red-600/50 text-red-200 rounded hover:bg-red-600 flex items-center gap-1"
             >
               <Trash2 size={12} />
               Clear
             </button>
-            <button onClick={handleClose} className="p-1 text-gray-400 hover:text-white">
+            <button onClick={handleClose} className="btn-pro p-1.5 text-gray-400 hover:text-white hover:bg-red-600/20 rounded-lg">
               <X size={20} />
             </button>
           </div>
         </div>
 
         {/* Controls bar */}
-        <div className="flex items-center gap-4 px-4 py-2 bg-studio-750 border-b border-studio-600 flex-wrap">
+        <div className="flex items-center gap-4 px-4 py-2 bg-studio-750 border-b border-white/[0.04] flex-wrap">
           {/* Steps */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400">Steps:</span>
@@ -1254,7 +1254,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         </div>
 
         {/* Pattern operations toolbar */}
-        <div className="flex items-center gap-1 px-4 py-1.5 bg-studio-750 border-b border-studio-600 flex-wrap">
+        <div className="flex items-center gap-1 px-4 py-1.5 bg-studio-750 border-b border-white/[0.04] flex-wrap">
           <span className="text-xs text-gray-500 mr-1">Pattern:</span>
           <button onClick={shiftLeft} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1" title="Shift Left">
             <ChevronLeft size={11} /> Shift L
@@ -1315,7 +1315,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                   <div
                     key={i}
                     className={`w-7 h-5 flex items-center justify-center text-xs ${
-                      i % 4 === 0 ? 'text-gray-400' : 'text-gray-600'
+                      i % 4 === 0 ? 'text-accent-primary/60' : 'text-gray-600'
                     } ${currentStep === i && isPreviewPlaying ? 'text-accent-primary font-bold' : ''} ${
                       i > 0 && i % 4 === 0 ? 'ml-1.5' : ''
                     }`}
@@ -1337,8 +1337,8 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                   <div
                     className={`w-16 flex-shrink-0 flex items-center justify-end pr-2 h-7 ${
                       isBlack
-                        ? 'bg-studio-900 text-gray-400'
-                        : 'bg-studio-800 text-gray-300'
+                        ? 'bg-gradient-to-b from-studio-950 to-studio-900 text-gray-400'
+                        : 'bg-gradient-to-b from-studio-800 to-studio-750 text-gray-300'
                     }`}
                   >
                     <div className="flex items-center gap-1">
@@ -1378,7 +1378,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                           }`}
                           style={vel > 0 ? {
                             backgroundColor: hexToRgba(note.color, [0, 0.45, 0.70, 1.0][vel]),
-                            boxShadow: vel === 3 ? `0 0 6px ${note.color}40` : undefined,
+                            boxShadow: vel === 3 ? `0 0 10px ${note.color}50` : undefined,
                           } : undefined}
                         >
                           {vel > 0 && (
@@ -1399,7 +1399,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-studio-600 bg-studio-700 p-3">
+        <div className="border-t border-white/[0.04] pro-header p-3">
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <div className="text-xs text-gray-400 mb-1">Generated code:</div>
@@ -1409,7 +1409,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                 </code>
                 <button
                   onClick={copyCode}
-                  className="p-2 bg-studio-600 text-gray-300 rounded hover:bg-studio-500"
+                  className="btn-pro p-2 bg-studio-600 text-gray-300 rounded-lg hover:bg-studio-500"
                   title="Copy"
                 >
                   <Copy size={16} />
@@ -1418,7 +1418,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
             </div>
             <button
               onClick={applyAsTrack}
-              className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 flex items-center gap-2"
+              className="btn-pro px-4 py-2 bg-accent-primary text-black rounded-lg font-medium hover:bg-emerald-400 flex items-center gap-2 shadow-glow-primary"
             >
               <Plus size={16} />
               Create Track

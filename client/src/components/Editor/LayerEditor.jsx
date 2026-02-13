@@ -20,11 +20,11 @@ export default function LayerEditor() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-3 py-2 bg-studio-700 border-b border-studio-600 flex items-center justify-between">
-        <span className="text-sm text-gray-400">Layers</span>
+      <div className="px-3 py-2 pro-header flex items-center justify-between">
+        <span className="text-sm text-gray-400 font-medium">Layers</span>
         <button
           onClick={() => addLayer()}
-          className="text-xs px-2 py-1 bg-accent-primary text-black rounded hover:bg-accent-primary/80 transition-colors"
+          className="btn-pro text-xs px-2 py-1 bg-accent-primary text-black rounded-lg hover:bg-accent-primary/80 transition-colors"
         >
           + Add
         </button>
@@ -36,7 +36,7 @@ export default function LayerEditor() {
           <div
             key={layer.id}
             onClick={() => selectLayer(index)}
-            className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-studio-700 transition-colors ${
+            className={`flex items-center gap-2 px-3 py-2 cursor-pointer border-b border-studio-700 transition-colors glow-border ${
               index === selectedLayerIndex
                 ? 'bg-studio-600'
                 : 'bg-studio-800 hover:bg-studio-700'
@@ -114,7 +114,7 @@ export default function LayerEditor() {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-gray-400">Volume</span>
-              <span className="text-accent-primary">
+              <span className="text-accent-primary font-mono">
                 {Math.round((selectedLayer.params.gain || 0.8) * 100)}%
               </span>
             </div>
@@ -131,7 +131,7 @@ export default function LayerEditor() {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-gray-400">Pan</span>
-              <span className="text-accent-primary">
+              <span className="text-accent-primary font-mono">
                 {selectedLayer.params.pan === 0
                   ? 'C'
                   : selectedLayer.params.pan < 0
@@ -152,7 +152,7 @@ export default function LayerEditor() {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-gray-400">Speed / Pitch</span>
-              <span className="text-accent-primary">
+              <span className="text-accent-primary font-mono">
                 {(selectedLayer.params.speed || 1).toFixed(2)}x
               </span>
             </div>
@@ -169,7 +169,7 @@ export default function LayerEditor() {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-gray-400">Filter (Cutoff)</span>
-              <span className="text-accent-primary">
+              <span className="text-accent-primary font-mono">
                 {Math.round(selectedLayer.params.cutoff || 8000)} Hz
               </span>
             </div>
@@ -186,7 +186,7 @@ export default function LayerEditor() {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-gray-400">Resonance</span>
-              <span className="text-accent-primary">
+              <span className="text-accent-primary font-mono">
                 {Math.round(selectedLayer.params.resonance || 0)}
               </span>
             </div>

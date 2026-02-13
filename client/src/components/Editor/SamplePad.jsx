@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronRight, X, Volume2 } from 'lucide-react';
 import { useStore } from '../../store';
-import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
+import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS, CATEGORY_ICONS } from '../../data/samples';
 import { previewSample } from '../../strudel/engine';
 
 // Operators with detailed explanations
@@ -374,10 +374,10 @@ export default function SamplePad() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-2 bg-studio-700 border-b border-studio-600">
+      <div className="px-3 py-2 pro-header">
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
-            <span className="text-sm text-gray-400">Samples</span>
+            <span className="text-sm text-gray-400 font-medium">Samples</span>
             <span className="text-xs text-gray-500">
               {hasEditingClip ? 'Click to add to clip' : 'Select a clip first'}
             </span>
@@ -391,7 +391,7 @@ export default function SamplePad() {
             placeholder="Search sample..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-7 pr-2 py-1 text-sm bg-studio-800 border border-studio-600 rounded text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
+            className="input-pro w-full pl-7 pr-2 py-1 text-sm rounded text-white placeholder-gray-500"
           />
         </div>
       </div>
@@ -430,7 +430,7 @@ export default function SamplePad() {
                   <OperatorTooltip key={op.symbol} op={op}>
                     <button
                       onClick={() => insertOperator(op.symbol)}
-                      className="px-2 py-1 text-xs bg-studio-600 hover:bg-accent-primary hover:text-black rounded transition-colors"
+                      className="btn-pro px-2 py-1 text-xs bg-studio-600 hover:bg-accent-primary hover:text-black rounded-lg transition-colors"
                     >
                       {op.label}
                     </button>
@@ -443,7 +443,7 @@ export default function SamplePad() {
             {categories.map(([category, samples]) => (
               <div key={category}>
                 <h4 className="text-xs text-gray-500 uppercase mb-2">
-                  {category} <span className="text-gray-600">({samples.length})</span>
+                  {CATEGORY_ICONS[category] || '📁'} {category} <span className="text-gray-600">({samples.length})</span>
                 </h4>
                 <div className="grid grid-cols-3 gap-1">
                   {samples.map((sampleObj) => (

@@ -25,7 +25,7 @@ function EffectSection({ name, icon: Icon, active, children, color }) {
           {name}
         </span>
         {active && (
-          <span className={`ml-auto text-xs px-1.5 py-0.5 rounded bg-${color}-500/30 text-${color}-300`}>
+          <span className={`ml-auto text-xs px-1.5 py-0.5 rounded bg-${color}-500/30 text-${color}-300 shadow-sm`}>
             ON
           </span>
         )}
@@ -60,7 +60,7 @@ function EffectSlider({ label, value, onChange, min, max, step = 0.01, unit = ''
           className="w-full h-2 bg-studio-600 rounded-lg appearance-none cursor-pointer accent-accent-primary"
         />
         <div
-          className="absolute top-0 left-0 h-2 bg-accent-primary/30 rounded-lg pointer-events-none"
+          className="absolute top-0 left-0 h-2 bg-accent-primary/30 rounded-full transition-all rounded-lg pointer-events-none"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -131,10 +131,10 @@ export default function EffectsRack({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-studio-800 rounded-lg shadow-2xl border border-studio-600 w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-gradient-to-b from-studio-800 to-studio-900 rounded-2xl shadow-panel border border-white/[0.06] animate-scale-in w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-studio-700 border-b border-studio-600">
+        <div className="flex items-center justify-between px-4 py-3 pro-header bg-gradient-modal">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-white">Effects Rack</h2>
             {hasActiveEffects && (
@@ -157,13 +157,13 @@ export default function EffectsRack({ isOpen, onClose }) {
             </span>
             <button
               onClick={resetAll}
-              className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1"
+              className="btn-pro px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 flex items-center gap-1"
               title="Reset all effects"
             >
               <RotateCcw size={12} />
               Reset
             </button>
-            <button onClick={onClose} className="p-1 text-gray-400 hover:text-white">
+            <button onClick={onClose} className="btn-pro p-1.5 text-gray-400 hover:text-white hover:bg-red-600/20 rounded-lg">
               <X size={20} />
             </button>
           </div>
@@ -306,7 +306,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                   updateParam('reverb', 0.4);
                   updateParam('reverbSize', 4);
                 }}
-                className="px-2 py-1 text-xs bg-blue-600/30 text-blue-300 rounded hover:bg-blue-600/50"
+                className="btn-pro px-2 py-1 text-xs bg-blue-600/30 text-blue-300 rounded hover:bg-blue-600/50"
               >
                 Big Room
               </button>
@@ -316,7 +316,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                   updateParam('delayTime', 0.375);
                   updateParam('delayFeedback', 0.4);
                 }}
-                className="px-2 py-1 text-xs bg-purple-600/30 text-purple-300 rounded hover:bg-purple-600/50"
+                className="btn-pro px-2 py-1 text-xs bg-purple-600/30 text-purple-300 rounded hover:bg-purple-600/50"
               >
                 Echo
               </button>
@@ -324,7 +324,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                 onClick={() => {
                   updateParam('distortion', 3);
                 }}
-                className="px-2 py-1 text-xs bg-red-600/30 text-red-300 rounded hover:bg-red-600/50"
+                className="btn-pro px-2 py-1 text-xs bg-red-600/30 text-red-300 rounded hover:bg-red-600/50"
               >
                 Dirty
               </button>
@@ -332,7 +332,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                 onClick={() => {
                   updateParam('hpf', 300);
                 }}
-                className="px-2 py-1 text-xs bg-yellow-600/30 text-yellow-300 rounded hover:bg-yellow-600/50"
+                className="btn-pro px-2 py-1 text-xs bg-yellow-600/30 text-yellow-300 rounded hover:bg-yellow-600/50"
               >
                 Radio
               </button>
@@ -341,7 +341,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                   updateParam('phaser', 2);
                   updateParam('phaserDepth', 0.7);
                 }}
-                className="px-2 py-1 text-xs bg-green-600/30 text-green-300 rounded hover:bg-green-600/50"
+                className="btn-pro px-2 py-1 text-xs bg-green-600/30 text-green-300 rounded hover:bg-green-600/50"
               >
                 Phased
               </button>
@@ -352,7 +352,7 @@ export default function EffectsRack({ isOpen, onClose }) {
                   updateParam('delay', 0.2);
                   updateParam('delayTime', 0.25);
                 }}
-                className="px-2 py-1 text-xs bg-accent-primary/30 text-accent-primary rounded hover:bg-accent-primary/50"
+                className="btn-pro px-2 py-1 text-xs bg-accent-primary/30 text-accent-primary rounded hover:bg-accent-primary/50"
               >
                 Ambient
               </button>
@@ -361,14 +361,14 @@ export default function EffectsRack({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 bg-studio-700 border-t border-studio-600">
+        <div className="px-4 py-3 pro-header border-t border-white/[0.04]">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">
               Effects are applied in real time to the selected layer
             </p>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400"
+              className="btn-pro px-4 py-2 bg-accent-primary text-black rounded-lg font-medium hover:bg-emerald-400"
             >
               Close
             </button>

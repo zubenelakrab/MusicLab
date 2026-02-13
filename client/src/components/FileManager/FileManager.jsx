@@ -206,7 +206,7 @@ export default function FileManager() {
       {/* New button */}
       <button
         onClick={handleNew}
-        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
+        className="btn-pro px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded-lg hover:bg-studio-500 transition-colors flex items-center gap-1"
         title="New composition"
       >
         <FilePlus size={14} />
@@ -216,7 +216,7 @@ export default function FileManager() {
       {/* Import button */}
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors flex items-center gap-1"
+        className="btn-pro px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded-lg hover:bg-studio-500 transition-colors flex items-center gap-1"
         title="Import composition (.json)"
       >
         <FolderOpen size={14} />
@@ -226,7 +226,7 @@ export default function FileManager() {
       {/* Export button */}
       <button
         onClick={handleExport}
-        className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors flex items-center gap-1"
+        className="btn-pro px-2 py-1 text-xs bg-accent-primary text-black rounded-lg hover:bg-emerald-400 transition-colors flex items-center gap-1 shadow-glow-sm"
         title="Export composition as JSON"
       >
         <Save size={14} />

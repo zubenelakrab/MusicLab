@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useStore } from '../../store';
 import PatternCard from './PatternCard';
 import PatternForm from './PatternForm';
+import { PRESETS_BY_CATEGORY, PRESET_CATEGORIES, ALL_PRESETS } from '../../data/presets';
 import logger from '../../utils/logger';
 import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 
@@ -18,13 +20,15 @@ export default function PatternList() {
     patterns,
     setPatterns,
     currentPattern,
-    setCurrentPattern,
     addPattern,
     arrangement,
     setEditingClip,
   } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [activeTab, setActiveTab] = useState('presets'); // 'presets' | 'mine'
 
   useEffect(() => {
     fetchPatterns();
@@ -145,57 +149,191 @@ export default function PatternList() {
     setEditingClip(trackId, clipId);
   };
 
-  // Replace everything with this pattern (loads it as a new project)
-  const handleReplace = (pattern) => {
-    setCurrentPattern({
-      id: pattern.id,
-      name: pattern.name,
-      code: pattern.code,
-      params: pattern.params || { gain: 0.8, cutoff: 8000, resonance: 0, speed: 1, pan: 0 },
-    });
+  const toggleCategory = (category) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
   };
+
+  // Filter presets by search term
+  const filteredPresetCategories = useMemo(() => {
+    if (!searchTerm.trim()) return PRESETS_BY_CATEGORY;
+
+    const term = searchTerm.toLowerCase();
+    const result = {};
+    for (const [category, presets] of Object.entries(PRESETS_BY_CATEGORY)) {
+      const filtered = presets.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        p.code.toLowerCase().includes(term) ||
+        p.tags?.some(t => t.toLowerCase().includes(term)) ||
+        category.toLowerCase().includes(term)
+      );
+      if (filtered.length > 0) {
+        result[category] = filtered;
+      }
+    }
+    return result;
+  }, [searchTerm]);
+
+  // Filter user patterns by search
+  const filteredUserPatterns = useMemo(() => {
+    if (!searchTerm.trim()) return patterns;
+    const term = searchTerm.toLowerCase();
+    return patterns.filter(p =>
+      p.name?.toLowerCase().includes(term) ||
+      p.code?.toLowerCase().includes(term) ||
+      p.tags?.some(t => t.toLowerCase().includes(term))
+    );
+  }, [patterns, searchTerm]);
+
+  const totalPresets = ALL_PRESETS.length;
+  const filteredTotal = Object.values(filteredPresetCategories).reduce((sum, arr) => sum + arr.length, 0);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
-        <span className="text-sm text-gray-400">Library</span>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400"
-        >
-          + Save
-        </button>
-      </div>
+      {/* Header */}
+      <div className="px-3 py-2 pro-header">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-400 font-medium">Library</span>
+          <button
+            onClick={() => { setShowForm(!showForm); setActiveTab('mine'); }}
+            className="btn-pro px-2 py-1 text-xs bg-accent-primary text-black rounded-lg hover:bg-emerald-400 shadow-glow-sm"
+          >
+            + Save
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {showForm && (
-          <PatternForm
-            onSave={handleSave}
-            onCancel={() => setShowForm(false)}
+        {/* Search */}
+        <div className="relative mb-2">
+          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Search presets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-pro w-full pl-7 pr-2 py-1 text-sm rounded text-white placeholder-gray-500"
           />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex bg-studio-700 rounded-lg overflow-hidden">
+          <button
+            onClick={() => setActiveTab('presets')}
+            className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+              activeTab === 'presets'
+                ? 'bg-accent-primary text-black'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            Presets ({searchTerm ? filteredTotal : totalPresets})
+          </button>
+          <button
+            onClick={() => setActiveTab('mine')}
+            className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${
+              activeTab === 'mine'
+                ? 'bg-accent-primary text-black'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            My Patterns ({filteredUserPatterns.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        {activeTab === 'mine' && (
+          <>
+            {showForm && (
+              <PatternForm
+                onSave={handleSave}
+                onCancel={() => setShowForm(false)}
+              />
+            )}
+
+            {loading ? (
+              <p className="text-sm text-gray-500 text-center py-4">Loading...</p>
+            ) : filteredUserPatterns.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-gray-500">No saved patterns</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Edit a clip and click "+ Save" to add your own
+                </p>
+              </div>
+            ) : (
+              filteredUserPatterns.map((pattern) => (
+                <PatternCard
+                  key={pattern.id}
+                  pattern={pattern}
+                  onAddAsTrack={handleAddAsTrack}
+
+                  onDelete={handleDelete}
+                  isActive={currentPattern.id === pattern.id}
+                />
+              ))
+            )}
+          </>
         )}
 
-        {loading ? (
-          <p className="text-sm text-gray-500 text-center py-4">Loading...</p>
-        ) : patterns.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-4">No saved patterns</p>
-        ) : (
-          patterns.map((pattern) => (
-            <PatternCard
-              key={pattern.id}
-              pattern={pattern}
-              onAddAsTrack={handleAddAsTrack}
-              onReplace={handleReplace}
-              onDelete={handleDelete}
-              isActive={currentPattern.id === pattern.id}
-            />
-          ))
+        {activeTab === 'presets' && (
+          <>
+            {Object.keys(filteredPresetCategories).length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">No presets found</p>
+            ) : (
+              Object.entries(filteredPresetCategories).map(([category, presets]) => {
+                const isExpanded = expandedCategories[category] ?? false;
+                const icon = PRESET_CATEGORIES[category] || '📁';
+
+                return (
+                  <div key={category}>
+                    {/* Category header */}
+                    <button
+                      onClick={() => toggleCategory(category)}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-left rounded-lg hover:bg-studio-700 transition-colors group"
+                    >
+                      <span className="text-sm">{icon}</span>
+                      <span className="flex-1 text-sm font-medium text-gray-300 group-hover:text-white">
+                        {category}
+                      </span>
+                      <span className="text-xs text-gray-500">{presets.length}</span>
+                      {isExpanded
+                        ? <ChevronDown size={14} className="text-gray-500" />
+                        : <ChevronRight size={14} className="text-gray-500" />
+                      }
+                    </button>
+
+                    {/* Category presets */}
+                    {isExpanded && (
+                      <div className="space-y-2 mt-1 ml-1 pl-2 border-l border-studio-600">
+                        {presets.map((preset) => (
+                          <PatternCard
+                            key={preset.id}
+                            pattern={preset}
+                            onAddAsTrack={handleAddAsTrack}
+          
+                            onDelete={() => {}}
+                            isActive={false}
+                            isPreset
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </>
         )}
       </div>
 
+      {/* Footer */}
       <div className="px-3 py-2 bg-studio-700 border-t border-studio-600">
         <p className="text-xs text-gray-500">
-          "+ Track" adds a new track
+          {activeTab === 'presets'
+            ? `${totalPresets} presets — drag to timeline`
+            : '"+ Track" adds a new track'
+          }
         </p>
       </div>
     </div>

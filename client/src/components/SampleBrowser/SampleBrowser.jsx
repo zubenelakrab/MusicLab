@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Search, Play, ChevronRight, Volume2, Grid, List, Layers } from 'lucide-react';
 import { useStore } from '../../store';
-import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS, ALL_SAMPLE_NAMES } from '../../data/samples';
+import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS, ALL_SAMPLE_NAMES, CATEGORY_ICONS } from '../../data/samples';
 import { previewSample } from '../../strudel/engine';
 
 // Category icons (using colored dots)
@@ -24,6 +24,7 @@ const CATEGORY_COLORS = {
   'Nature': 'bg-sky-500',
   'Materials': 'bg-slate-500',
   'Misc': 'bg-gray-500',
+  'Retro/Arcade': 'bg-fuchsia-500',
 };
 
 export default function SampleBrowser({ isOpen, onClose }) {
@@ -116,10 +117,10 @@ export default function SampleBrowser({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-studio-800 rounded-lg shadow-2xl border border-studio-600 w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-gradient-to-b from-studio-800 to-studio-900 rounded-2xl shadow-panel border border-white/[0.06] animate-scale-in w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-studio-700 border-b border-studio-600">
+        <div className="flex items-center justify-between px-4 py-3 pro-header bg-gradient-modal">
           <div className="flex items-center gap-3">
             <Layers size={20} className="text-accent-primary" />
             <h2 className="text-lg font-bold text-white">Sample Browser</h2>
@@ -147,7 +148,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
             <span className="text-sm text-gray-400">
               Layer: <span className="text-white">{currentLayer?.name || `Layer ${selectedLayerIndex + 1}`}</span>
             </span>
-            <button onClick={onClose} className="p-1 text-gray-400 hover:text-white">
+            <button onClick={onClose} className="btn-pro p-1.5 text-gray-400 hover:text-white hover:bg-red-600/20 rounded-lg">
               <X size={20} />
             </button>
           </div>
@@ -161,7 +162,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                 onClick={() => setSelectedCategory(null)}
                 className={`w-full px-3 py-2 text-left text-sm rounded mb-1 ${
                   !selectedCategory
-                    ? 'bg-accent-primary text-black'
+                    ? 'bg-gradient-to-r from-accent-primary to-accent-tertiary text-black shadow-glow-sm'
                     : 'text-gray-300 hover:bg-studio-600'
                 }`}
               >
@@ -173,11 +174,11 @@ export default function SampleBrowser({ isOpen, onClose }) {
                   onClick={() => setSelectedCategory(category)}
                   className={`w-full px-3 py-2 text-left text-sm rounded mb-1 flex items-center gap-2 ${
                     selectedCategory === category
-                      ? 'bg-accent-primary text-black'
+                      ? 'bg-gradient-to-r from-accent-primary to-accent-tertiary text-black shadow-glow-sm'
                       : 'text-gray-300 hover:bg-studio-600'
                   }`}
                 >
-                  <span className={`w-2 h-2 rounded-full ${CATEGORY_COLORS[category] || 'bg-gray-500'}`} />
+                  <span>{CATEGORY_ICONS[category] || '📁'}</span>
                   <span className="flex-1 truncate">{category}</span>
                   <span className="text-xs opacity-60">{samples.length}</span>
                 </button>
@@ -212,7 +213,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                   placeholder="Search samples..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-studio-700 border border-studio-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-accent-primary"
+                  className="input-pro w-full pl-10 pr-4 py-2 rounded-lg text-white placeholder-gray-500"
                 />
               </div>
             </div>
@@ -244,7 +245,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                             ? 'bg-accent-primary text-black scale-105'
                             : selectedSample === sample
                               ? 'bg-studio-600 ring-2 ring-accent-primary'
-                              : 'bg-studio-700 hover:bg-studio-600'
+                              : 'glass-panel hover:bg-studio-600'
                           }
                         `}
                       >
@@ -381,7 +382,7 @@ export default function SampleBrowser({ isOpen, onClose }) {
                           handleInsert(selectedSample, variant);
                         }}
                         className={`
-                          px-2 py-2 text-xs rounded transition-all
+                          btn-pro px-2 py-2 text-xs rounded transition-all
                           ${playing
                             ? 'bg-accent-primary text-black scale-110'
                             : selectedVariant === variant
@@ -420,14 +421,14 @@ export default function SampleBrowser({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-studio-700 border-t border-studio-600 flex items-center justify-between">
+        <div className="px-4 py-2 pro-header border-t border-white/[0.04] flex items-center justify-between">
           <p className="text-xs text-gray-500">
             {filteredSamples.length} samples shown
-            {selectedCategory && ` en ${selectedCategory}`}
+            {selectedCategory && ` in ${selectedCategory}`}
           </p>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-accent-primary text-black rounded font-medium hover:bg-emerald-400 text-sm"
+            className="btn-pro px-4 py-1.5 bg-accent-primary text-black rounded-lg font-medium hover:bg-emerald-400 text-sm"
           >
             Close
           </button>

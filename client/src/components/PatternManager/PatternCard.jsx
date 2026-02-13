@@ -1,7 +1,6 @@
-import { GripVertical } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
-export default function PatternCard({ pattern, onAddAsTrack, onReplace, onDelete, isActive }) {
-  // Handle drag start - allows dragging to arrangement
+export default function PatternCard({ pattern, onAddAsTrack, onDelete, isActive, isPreset }) {
   const handleDragStart = (e) => {
     e.dataTransfer.setData('patternId', pattern.id);
     e.dataTransfer.setData('patternCode', pattern.code);
@@ -11,68 +10,44 @@ export default function PatternCard({ pattern, onAddAsTrack, onReplace, onDelete
 
   return (
     <div
-      className={`p-3 rounded-lg transition-all cursor-grab active:cursor-grabbing ${
-        isActive
-          ? 'bg-accent-primary/20 border border-accent-primary'
-          : 'bg-studio-700 border border-transparent hover:border-studio-500'
+      className={`group px-2.5 py-2 glass-panel glow-border rounded-lg transition-all cursor-grab active:cursor-grabbing ${
+        isActive ? 'shadow-glow-sm border-accent-primary' : 'hover:border-studio-500'
       }`}
       draggable
       onDragStart={handleDragStart}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <GripVertical size={14} className="text-gray-500 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-white truncate">{pattern.name}</h4>
-            <p className="text-xs text-gray-500 font-mono truncate mt-0.5">{pattern.code}</p>
+      {/* Single row: name + code + actions */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-white truncate">{pattern.name}</span>
+            {pattern.tags?.length > 0 && (
+              <span className="text-[10px] text-gray-500 truncate hidden group-hover:inline">
+                {pattern.tags.slice(0, 2).join(' / ')}
+              </span>
+            )}
           </div>
+          <p className="text-[11px] text-gray-500 font-mono truncate">{pattern.code}</p>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(pattern.id);
-          }}
-          className="text-gray-500 hover:text-red-400 text-xs px-1"
-          title="Delete"
-        >
-          x
-        </button>
-      </div>
 
-      {pattern.tags?.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {pattern.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-1.5 py-0.5 text-xs bg-studio-600 text-gray-400 rounded"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Action buttons */}
-      <div className="flex gap-2 mt-2 pt-2 border-t border-studio-600">
         <button
-          onClick={() => onAddAsTrack(pattern)}
-          className="flex-1 px-2 py-1 text-xs bg-accent-primary text-black rounded hover:bg-emerald-400 transition-colors"
+          onClick={(e) => { e.stopPropagation(); onAddAsTrack(pattern); }}
+          className="btn-pro flex-shrink-0 p-1.5 bg-accent-primary text-black rounded-lg hover:bg-emerald-400 transition-colors"
           title="Add as new track"
         >
-          + Track
+          <Plus size={14} />
         </button>
-        <button
-          onClick={() => onReplace(pattern)}
-          className="px-2 py-1 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500 transition-colors"
-          title="Load pattern"
-        >
-          Load
-        </button>
-      </div>
 
-      <p className="text-[10px] text-gray-600 mt-1 text-center">
-        Drag to timeline to create clip
-      </p>
+        {!isPreset && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(pattern.id); }}
+            className="flex-shrink-0 p-1.5 text-gray-600 hover:text-red-400 rounded-lg transition-colors"
+            title="Delete"
+          >
+            <X size={14} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
