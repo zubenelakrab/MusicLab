@@ -27,12 +27,14 @@ A powerful web-based music production environment built on [Strudel](https://str
 - Swing control (0-100%)
 - 30+ genre presets (Hip Hop, Techno, House, Trap, etc.)
 - Real-time preview with visual step indicator
+- Pro UI with glass panels and glow effects
 
 ### Melodic Sequencer
 - Piano-roll style note input (C-B, octaves 1-6)
 - 10 synthesizer sounds (Arpy, Pluck, Moog, Juno, FM, etc.)
 - 8 melodic presets (arpeggios, basslines, melodies)
 - Color-coded notes for easy visualization
+- Pro UI with glass panels and glow effects
 
 ### Track Mixer
 - Unlimited tracks with solo/mute controls
@@ -41,20 +43,28 @@ A powerful web-based music production environment built on [Strudel](https://str
 - Stack drum patterns with melodies seamlessly
 
 ### Audio Visualizer
-- 6 visualization modes: Bars, Wave, Circle, Starburst, Tunnel, Nebula
-- Real-time frequency analysis
-- Reactive to audio output
+- 41 visualization modes in 7 categories (Frequency, Waveform, Particles, Geometric, Nature, Retro, Abstract)
+- 34 post-processing effects (CRT, VHS, Bloom, Glitch, Mirror, Beat-reactive, and more)
+- 10 color palettes with live gradient preview
+- All modes react to bass, mid, and high frequency bands in real-time
+- Fullscreen with dropdown selectors for modes, FX, and palettes
 
 ### Recording
 - Record your sessions to audio files
 - Export as WAV or WebM format
 - Built-in audio conversion
 
+### Pattern Library
+- 111 built-in presets across 10 categories (Drums, Bass, Melodic, Ambient, etc.)
+- Retro/Arcade sample category with Space Invaders, SID chip, and classic game sounds
+- Drag-and-drop presets to timeline
+- Searchable browser with emoji category icons
+- Save your own patterns
+
 ### Project Management
 - Save and load full arrangements with tracks
 - Export/import projects as JSON (v2.0 format)
 - Backwards compatible with legacy layer format
-- Pattern library with categories and drag-to-timeline
 
 ## Installation
 
@@ -193,7 +203,24 @@ MusicLab requires a modern browser with Web Audio API support:
 
 ## Samples
 
-MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) collection from TidalCycles, providing 296 high-quality samples across 14 categories.
+MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) collection from TidalCycles, providing 296+ high-quality samples across 19 categories including a curated Retro/Arcade collection.
+
+## Changelog
+
+### v2.0.0 (2026-02-13)
+- **Visualizer overhaul**: 41 audio-reactive modes (spectrum, terrain, constellation, matrix, aurora, flame, and 35 more) organized in 7 categories with dropdown selector
+- **34 post-processing FX**: CRT, VHS, bloom, glitch, RGB split, beat zoom, screen shake, mirrors, and more — multi-select categorized panel
+- **10 color palettes**: Classic, Neon, Fire, Ocean, Matrix, Ice, Sunset, Cyber, Acid, Rainbow with gradient preview dropdown
+- **Enhanced particles**: Fullscreen coverage with additive blending, radial gradients, higher particle counts
+- **111 pattern presets**: 10 categories (Drums, Bass, Melodic, Ambient, FX, World, Experimental, etc.) with searchable browser
+- **Retro/Arcade samples**: New category with Space Invaders, Tacscan, SID chip, Speak & Spell, and classic game sounds
+- **Emoji category icons**: All sample/preset categories use recognizable icons instead of colored dots
+- **Pro UI**: Glass panels, glow borders, and polished styling across all components
+- **Step & Melodic Sequencer upgrades**: Pro visual styling with arcade-inspired presets
+- **English UI**: Full translation from Spanish
+
+### v1.0.0
+- Initial release with DAW-style arrangement, live coding editor, step sequencer, melodic sequencer, effects rack, recording, and project management
 
 ## Contributing
 
