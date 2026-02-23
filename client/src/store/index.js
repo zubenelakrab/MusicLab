@@ -462,11 +462,11 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       tracks: state.arrangement.tracks.map(t =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map(c =>
-                c.id === clipId ? { ...c, ...updates } : c
-              ),
-            }
+            ...t,
+            clips: t.clips.map(c =>
+              c.id === clipId ? { ...c, ...updates } : c
+            ),
+          }
           : t
       ),
     },
@@ -497,11 +497,11 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
           tracks: state.arrangement.tracks.map(t =>
             t.id === fromTrackId
               ? {
-                  ...t,
-                  clips: t.clips.map(c =>
-                    c.id === clipId ? updatedClip : c
-                  ),
-                }
+                ...t,
+                clips: t.clips.map(c =>
+                  c.id === clipId ? updatedClip : c
+                ),
+              }
               : t
           ),
         },
@@ -543,11 +543,11 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
         tracks: state.arrangement.tracks.map(t =>
           t.id === trackId
             ? {
-                ...t,
-                clips: t.clips.map(c =>
-                  c.id === clipId ? { ...c, durationBars: snappedDuration } : c
-                ),
-              }
+              ...t,
+              clips: t.clips.map(c =>
+                c.id === clipId ? { ...c, durationBars: snappedDuration } : c
+              ),
+            }
             : t
         ),
       },
@@ -640,11 +640,11 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       tracks: state.arrangement.tracks.map(t =>
         t.id === trackId
           ? {
-              ...t,
-              clips: t.clips.map(c =>
-                c.id === clipId ? { ...c, layers } : c
-              ),
-            }
+            ...t,
+            clips: t.clips.map(c =>
+              c.id === clipId ? { ...c, layers } : c
+            ),
+          }
           : t
       ),
     },
@@ -725,18 +725,18 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
         tracks: state.arrangement.tracks.map(t =>
           t.id === trackId
             ? {
-                ...t,
-                clips: t.clips.map(c =>
-                  c.id === clipId
-                    ? {
-                        ...c,
-                        layers: c.layers?.map((layer, i) =>
-                          i === 0 ? { ...layer, code } : layer
-                        ) || [{ id: 'layer-new', code, muted: false, solo: false, params: {} }],
-                      }
-                    : c
-                ),
-              }
+              ...t,
+              clips: t.clips.map(c =>
+                c.id === clipId
+                  ? {
+                    ...c,
+                    layers: c.layers?.map((layer, i) =>
+                      i === 0 ? { ...layer, code } : layer
+                    ) || [{ id: generateId(), code, muted: false, solo: false, params: {} }],
+                  }
+                  : c
+              ),
+            }
             : t
         ),
       },
@@ -818,7 +818,6 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     });
   },
 
-  // Find clip by ID across all tracks
   findClip: (clipId) => {
     const state = get();
     for (const track of state.arrangement.tracks) {
@@ -827,4 +826,30 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     }
     return null;
   },
+
+  loadProject: (project) => set({
+    arrangement: {
+      id: project.id || null,
+      name: project.name || 'Untitled',
+      lengthBars: project.arrangement?.lengthBars || project.lengthBars || 32,
+      loopEnabled: project.arrangement?.loopEnabled || project.loopEnabled || false,
+      loopStart: project.arrangement?.loopStart || project.loopStart || 0,
+      loopEnd: project.arrangement?.loopEnd || project.loopEnd || 8,
+      tracks: project.tracks || project.arrangement?.tracks || [],
+    },
+    bpm: project.bpm || 120,
+    editingClip: null,
+  }),
+
+  resetProject: () => set({
+    arrangement: createInitialArrangement(),
+    bpm: 120,
+    editingClip: null,
+    currentPattern: {
+      id: null,
+      name: 'Untitled',
+      layers: [createLayer('bd sd', 'Drums')],
+      params: { ...defaultLayerParams },
+    },
+  }),
 })));

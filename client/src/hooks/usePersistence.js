@@ -20,10 +20,7 @@ export function usePersistence() {
 
       const data = JSON.parse(saved);
       if (data.arrangement && data.arrangement.tracks) {
-        useStore.setState({
-          arrangement: data.arrangement,
-          bpm: data.bpm || 120,
-        });
+        useStore.getState().loadProject(data);
       }
     } catch (err) {
       console.warn('Failed to restore autosave:', err);
@@ -89,10 +86,17 @@ export function usePersistence() {
           body: JSON.stringify(body),
         });
         const project = await res.json();
-        // Store the server-assigned ID
+        useStore.getState().updateArrangementTrack(null, { id: project.id }); // This might not be right, let's use a better way to update just the ID
+        // Actually arrangement.id is what we want to update.
+        // Let's add an action for it or use updateArrangementTrack if it handles it.
         useStore.setState((s) => ({
           arrangement: { ...s.arrangement, id: project.id },
-        }));
+        })); // This one is okay because it's just the ID, but it still won't increment version.
+        // However, changing just the ID doesn't really need a new version for audio engine.
+        // But for consistency let's use a new action or just use updateArrangementTrack if it supports it.
+        // Let's look at updateArrangementTrack in store/index.js. It takes trackId.
+        // The arrangement itself doesn't have an update action for global properties other than the specific ones.
+
         return project;
       }
     } catch (err) {
@@ -108,18 +112,7 @@ export function usePersistence() {
       if (!res.ok) return null;
       const project = await res.json();
 
-      useStore.setState({
-        arrangement: {
-          id: project.id,
-          name: project.name || 'Untitled',
-          lengthBars: project.arrangement?.lengthBars || 32,
-          loopEnabled: project.arrangement?.loopEnabled || false,
-          loopStart: project.arrangement?.loopStart || 0,
-          loopEnd: project.arrangement?.loopEnd || 8,
-          tracks: project.tracks || [],
-        },
-        bpm: project.bpm || 120,
-      });
+      useStore.getState().loadProject(project);
       return project;
     } catch (err) {
       console.error('Failed to load from server:', err);

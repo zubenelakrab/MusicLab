@@ -34,7 +34,7 @@ function installDestinationIntercept() {
     const originalConnect = originalGainConnect;
 
     // Monkey-patch connect to intercept connections to destination
-    GainNode.prototype.connect = function(destination, ...args) {
+    GainNode.prototype.connect = function (destination, ...args) {
       // Check if connecting to the audio destination
       if (destination === ctx.destination && analyserNode) {
         logger.log('Intercepted connection to destination, routing through analyser');
@@ -875,9 +875,16 @@ export async function previewSample(sampleName, variant = 0) {
     const originalCps = scheduler.cps;
 
     // Set high CPS for fast playback, then schedule stop
+    const wasPlaying = scheduler.started;
+    const oldPattern = scheduler.pattern;
+
     scheduler.setCps(2);
-    scheduler.setPattern(pattern);
-    scheduler.start();
+    if (wasPlaying && oldPattern) {
+      scheduler.setPattern(oldPattern.stack(pattern));
+    } else {
+      scheduler.setPattern(pattern);
+      scheduler.start();
+    }
 
     // Stop after a short duration (500ms should be enough for most samples)
     setTimeout(() => {
@@ -1173,8 +1180,10 @@ export async function previewSampleDirect(sampleName, variant = 0) {
     const oldCps = scheduler.cps;
 
     scheduler.setCps(4);
-    scheduler.setPattern(pattern);
-    if (!wasPlaying) {
+    if (wasPlaying && oldPattern) {
+      scheduler.setPattern(oldPattern.stack(pattern));
+    } else {
+      scheduler.setPattern(pattern);
       scheduler.start();
     }
 

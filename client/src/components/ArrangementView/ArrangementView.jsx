@@ -134,7 +134,7 @@ export default function ArrangementView() {
               <TimeRuler
                 lengthBars={arrangement.lengthBars}
                 pixelsPerBar={effectivePixelsPerBar}
-                scrollX={0}
+                scrollX={scrollX}
                 gridSubdivision={gridSubdivision}
               />
             </div>
@@ -237,7 +237,7 @@ export default function ArrangementView() {
             <Playhead
               position={playheadPosition}
               pixelsPerBar={effectivePixelsPerBar}
-              scrollX={0}
+              scrollX={scrollX}
             />
           </div>
         </div>

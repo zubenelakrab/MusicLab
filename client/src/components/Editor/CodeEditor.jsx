@@ -17,11 +17,11 @@ const SAMPLE_COMPLETIONS = ALL_SAMPLES.map(s => ({
 
 // Pattern templates
 const PATTERN_COMPLETIONS = [
-  { label: 'bd sd bd sd', type: 'text', detail: 'Beat basico 4/4', apply: 'bd sd bd sd' },
-  { label: 'bd*4', type: 'text', detail: '4 kicks por ciclo', apply: 'bd*4' },
-  { label: 'hh*8', type: 'text', detail: 'Hi-hats rapidos', apply: 'hh*8' },
-  { label: '[bd, hh*4, ~ sd ~ sd]', type: 'text', detail: 'House clasico', apply: '[bd, hh*4, ~ sd ~ sd]' },
-  { label: 'bd(3,8)', type: 'text', detail: 'Euclidiano 3 en 8', apply: 'bd(3,8)' },
+  { label: 'bd sd bd sd', type: 'text', detail: 'Basic 4/4 beat', apply: 'bd sd bd sd' },
+  { label: 'bd*4', type: 'text', detail: '4 kicks per cycle', apply: 'bd*4' },
+  { label: 'hh*8', type: 'text', detail: 'Fast hi-hats', apply: 'hh*8' },
+  { label: '[bd, hh*4, ~ sd ~ sd]', type: 'text', detail: 'Classic House', apply: '[bd, hh*4, ~ sd ~ sd]' },
+  { label: 'bd(3,8)', type: 'text', detail: 'Euclidian 3 in 8', apply: 'bd(3,8)' },
 ];
 
 const COMPLETIONS = [...SAMPLE_COMPLETIONS, ...PATTERN_COMPLETIONS];

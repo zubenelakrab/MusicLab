@@ -77,36 +77,8 @@ export default function FileManager() {
 
         // Version 2.0 format with arrangement tracks
         if (composition.version === '2.0' && composition.arrangement) {
-          const arr = composition.arrangement;
-          useStore.setState({
-            arrangement: {
-              id: null,
-              name: composition.name || 'Imported',
-              lengthBars: arr.lengthBars || 32,
-              loopEnabled: arr.loopEnabled || false,
-              loopStart: arr.loopStart || 0,
-              loopEnd: arr.loopEnd || 8,
-              tracks: arr.tracks.map(track => ({
-                id: track.id || generateTrackId(),
-                name: track.name || 'Track',
-                color: track.color || '#00d4aa',
-                muted: track.muted || false,
-                solo: track.solo || false,
-                height: track.height || 100,
-                params: track.params || { gain: 0.8, pan: 0, cutoff: 8000, resonance: 0, speed: 1 },
-                clips: (track.clips || []).map(clip => ({
-                  id: clip.id || generateClipId(),
-                  patternId: clip.patternId || null,
-                  name: clip.name || 'Clip',
-                  startBar: clip.startBar || 0,
-                  durationBars: clip.durationBars || 4,
-                  color: clip.color || track.color || '#00d4aa',
-                  layers: clip.layers || null,
-                })),
-              })),
-            },
-          });
-          alert(`Project "${composition.name}" imported with ${arr.tracks.length} tracks`);
+          useStore.getState().loadProject(composition);
+          alert(`Project "${composition.name}" imported with ${composition.arrangement.tracks.length} tracks`);
           return;
         }
 
@@ -138,16 +110,10 @@ export default function FileManager() {
             }],
           }));
 
-          useStore.setState({
-            arrangement: {
-              id: null,
-              name: composition.name || 'Imported',
-              lengthBars: 32,
-              loopEnabled: false,
-              loopStart: 0,
-              loopEnd: 8,
-              tracks,
-            },
+          useStore.getState().loadProject({
+            name: composition.name,
+            bpm: composition.bpm,
+            tracks: tracks
           });
           alert(`Legacy composition "${composition.name}" imported as ${tracks.length} tracks`);
           return;
@@ -178,18 +144,8 @@ export default function FileManager() {
     }
 
     clearAutosave();
-    useStore.setState({
-      arrangement: {
-        id: null,
-        name: 'Untitled',
-        lengthBars: 32,
-        loopEnabled: false,
-        loopStart: 0,
-        loopEnd: 8,
-        tracks: [],
-      },
-    });
-    setBpm(120);
+    useStore.getState().resetProject();
+    // bpm is already reset by resetProject()
   };
 
   return (
