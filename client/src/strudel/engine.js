@@ -10,6 +10,13 @@ let analyserNode = null;
 let analyserConnected = false;
 let interceptInstalled = false;
 let originalGainConnect = null;
+const warnedErrors = new Set();
+
+function warnOnce(key, message, error) {
+  if (warnedErrors.has(key)) return;
+  warnedErrors.add(key);
+  logger.warn(message, error);
+}
 
 // Export getAudioContext for visualizer
 export { getAudioContext };
@@ -456,7 +463,8 @@ export function getAudioContextState() {
   try {
     const ctx = getAudioContext();
     return ctx?.state || 'closed';
-  } catch {
+  } catch (err) {
+    warnOnce('audio-context-state', 'Failed to get audio context state:', err);
     return 'closed';
   }
 }
@@ -596,7 +604,8 @@ export function getSchedulerTime() {
       phase: scheduler.phase || 0,
       cps: scheduler.cps || 0.5,
     };
-  } catch {
+  } catch (err) {
+    warnOnce('scheduler-time', 'Failed to read scheduler time:', err);
     return null;
   }
 }
@@ -941,7 +950,8 @@ export function getPlaybackPositionBars() {
     }
 
     return 0;
-  } catch {
+  } catch (err) {
+    warnOnce('playback-position', 'Failed to get playback position:', err);
     return 0;
   }
 }

@@ -628,7 +628,7 @@ function hexToRgba(hex, alpha) {
 }
 
 export default function MelodicSequencer({ isOpen, onClose }) {
-  const { arrangement, setEditingClip, bpm } = useStore();
+  const { arrangement, setEditingClip, bpm, setPlaying } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
   // Core state
@@ -645,6 +645,15 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   const [randomDensity, setRandomDensity] = useState(50);
   const stepIntervalRef = useRef(null);
   const gridRef = useRef(null);
+
+  const stopPreviewPlayback = useCallback((resetPreviewState = true) => {
+    stopPreview();
+    if (resetPreviewState) {
+      setIsPreviewPlaying(false);
+    }
+    // Preview uses the same scheduler, so the main transport must be marked as stopped.
+    setPlaying(false);
+  }, [setPlaying]);
 
 
   // Compute visible notes for the piano roll
@@ -954,8 +963,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
 
   const clearAll = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     setGrid({});
   };
@@ -982,8 +990,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   // Load preset
   const loadPreset = (preset) => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     setSynth(preset.synth);
     const newGrid = JSON.parse(JSON.stringify(preset.grid));
@@ -994,8 +1001,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   // Create track
   const applyAsTrack = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     const code = generateCode();
     if (!code || code === '~') {
@@ -1057,9 +1063,10 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   // Toggle preview
   const togglePreview = async () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     } else {
+      // Preview takes over the scheduler, so keep transport state in sync.
+      setPlaying(false);
       if (!audioReady) {
         await initializeAudio();
       }
@@ -1083,7 +1090,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       const notePattern = generateNotePattern();
       if (notePattern) {
         const updatePreviewPattern = async () => {
-          stopPreview();
+          stopPreviewPlayback(false);
           const gainInfo = getGainInfo();
           const result = await startMelodicPreview(notePattern, synth, bpm, gainInfo);
           if (!result.success) {
@@ -1101,15 +1108,14 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       if (stepIntervalRef.current) {
         clearInterval(stepIntervalRef.current);
       }
-      stopPreview();
+      stopPreviewPlayback(false);
     };
-  }, []);
+  }, [stopPreviewPlayback]);
 
   // Handle close
   const handleClose = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     onClose();
   };

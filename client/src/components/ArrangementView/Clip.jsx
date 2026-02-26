@@ -68,7 +68,7 @@ export default function Clip({ clip, track, pixelsPerBar, gridSubdivision }) {
         const newX = e.clientX - parentRect.left - dragOffset;
         const newBar = newX / pixelsPerBar;
         const snappedBar = Math.round(newBar * gridSubdivision) / gridSubdivision;
-        moveClip(track.id, track.id, clip.id, snappedBar);
+        moveClip(track.id, clip.id, snappedBar);
       }
 
       if (isResizing) {

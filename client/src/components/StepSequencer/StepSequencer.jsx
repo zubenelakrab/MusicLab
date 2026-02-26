@@ -474,7 +474,7 @@ const TRACK_COLORS = [
 ];
 
 export default function StepSequencer({ isOpen, onClose }) {
-  const { arrangement, setEditingClip, bpm } = useStore();
+  const { arrangement, setEditingClip, bpm, setPlaying } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
   // Core state
@@ -500,6 +500,15 @@ export default function StepSequencer({ isOpen, onClose }) {
   const [euclideanHits, setEuclideanHits] = useState(4);
   const [draggedSoundIndex, setDraggedSoundIndex] = useState(null);
   const [randomDensity, setRandomDensity] = useState(30);
+
+  const stopPreviewPlayback = useCallback((resetPreviewState = true) => {
+    stopPreview();
+    if (resetPreviewState) {
+      setIsPreviewPlaying(false);
+    }
+    // Preview uses the same scheduler, so the main transport must be marked as stopped.
+    setPlaying(false);
+  }, [setPlaying]);
 
   // Initialize grid and row state when sounds or steps change
   useEffect(() => {
@@ -544,8 +553,9 @@ export default function StepSequencer({ isOpen, onClose }) {
 
   // Generate mini notation from grid with velocity/mute/solo/volume/accent support
   const generateCode = useCallback(() => {
+    const safeSounds = Array.isArray(sounds) ? sounds : [];
     const hasSolo = Object.values(rowSolos).some(v => v);
-    const activeSounds = sounds.filter(s => {
+    const activeSounds = safeSounds.filter(s => {
       if (rowMutes[s.id]) return false;
       if (hasSolo && !rowSolos[s.id]) return false;
       return grid[s.id]?.some(v => v > 0);
@@ -557,15 +567,16 @@ export default function StepSequencer({ isOpen, onClose }) {
       const variation = variations[sound.id] || 0;
       const soundName = variation > 0 ? `${sound.id}:${variation}` : sound.id;
       const rowVol = rowVolumes[sound.id] ?? 0.8;
+      const soundGrid = Array.isArray(grid[sound.id]) ? grid[sound.id] : [];
 
-      const stepPattern = grid[sound.id].map(vel => vel > 0 ? soundName : '~').join(' ');
+      const stepPattern = soundGrid.map(vel => vel > 0 ? soundName : '~').join(' ');
 
       // Check if we need per-step gain pattern
-      const activeSteps = grid[sound.id].filter(v => v > 0);
+      const activeSteps = soundGrid.filter(v => v > 0);
       if (activeSteps.length === 0) return null;
 
       const allSameVel = activeSteps.every(v => v === activeSteps[0]);
-      const noAccents = !accents.some((a, i) => a && grid[sound.id][i] > 0);
+      const noAccents = !accents.some((a, i) => a && (soundGrid[i] || 0) > 0);
 
       if (allSameVel && noAccents) {
         // Uniform velocity - apply single gain
@@ -575,7 +586,7 @@ export default function StepSequencer({ isOpen, onClose }) {
       }
 
       // Mixed velocities or accents - generate per-step gain pattern
-      const gainPattern = grid[sound.id].map((vel, i) => {
+      const gainPattern = soundGrid.map((vel, i) => {
         if (vel === 0) return '~';
         let g = VELOCITY_GAIN[vel] * rowVol;
         if (accents[i]) g = Math.min(1, g + 0.3);
@@ -723,8 +734,7 @@ export default function StepSequencer({ isOpen, onClose }) {
   // Clear entire grid
   const clearAll = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     setOpenRowMenu(null);
     setEuclideanRow(null);
@@ -741,8 +751,7 @@ export default function StepSequencer({ isOpen, onClose }) {
   // Load preset pattern
   const loadPreset = (preset) => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     setOpenRowMenu(null);
     setEuclideanRow(null);
@@ -861,8 +870,7 @@ export default function StepSequencer({ isOpen, onClose }) {
 
   const applyAsTrack = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     const code = generateCode();
     if (!code || code === '~') {
@@ -924,9 +932,10 @@ export default function StepSequencer({ isOpen, onClose }) {
 
   const togglePreview = async () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     } else {
+      // Preview takes over the scheduler, so keep transport state in sync.
+      setPlaying(false);
       if (!audioReady) {
         await initializeAudio();
       }
@@ -947,7 +956,7 @@ export default function StepSequencer({ isOpen, onClose }) {
   useEffect(() => {
     if (isPreviewPlaying && previewCode && previewCode !== '~') {
       const updatePreview = async () => {
-        stopPreview();
+        stopPreviewPlayback(false);
         const result = await startPreview(previewCode, bpm, swing);
         if (!result.success) {
           setIsPreviewPlaying(false);
@@ -963,15 +972,14 @@ export default function StepSequencer({ isOpen, onClose }) {
       if (stepIntervalRef.current) {
         clearInterval(stepIntervalRef.current);
       }
-      stopPreview();
+      stopPreviewPlayback(false);
     };
-  }, []);
+  }, [stopPreviewPlayback]);
 
   // Stop preview when modal closes
   const handleClose = () => {
     if (isPreviewPlaying) {
-      stopPreview();
-      setIsPreviewPlaying(false);
+      stopPreviewPlayback();
     }
     onClose();
   };

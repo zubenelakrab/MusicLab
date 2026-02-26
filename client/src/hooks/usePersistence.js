@@ -78,6 +78,7 @@ export function usePersistence() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
+        if (!res.ok) return null;
         return await res.json();
       } else {
         const res = await fetch('/api/projects', {
@@ -85,18 +86,9 @@ export function usePersistence() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
+        if (!res.ok) return null;
         const project = await res.json();
-        useStore.getState().updateArrangementTrack(null, { id: project.id }); // This might not be right, let's use a better way to update just the ID
-        // Actually arrangement.id is what we want to update.
-        // Let's add an action for it or use updateArrangementTrack if it handles it.
-        useStore.setState((s) => ({
-          arrangement: { ...s.arrangement, id: project.id },
-        })); // This one is okay because it's just the ID, but it still won't increment version.
-        // However, changing just the ID doesn't really need a new version for audio engine.
-        // But for consistency let's use a new action or just use updateArrangementTrack if it supports it.
-        // Let's look at updateArrangementTrack in store/index.js. It takes trackId.
-        // The arrangement itself doesn't have an update action for global properties other than the specific ones.
-
+        useStore.getState().setArrangementId(project.id);
         return project;
       }
     } catch (err) {

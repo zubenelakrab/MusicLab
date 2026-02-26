@@ -472,7 +472,15 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     },
   })),
 
-  moveClip: (fromTrackId, toTrackId, clipId, newStartBar) => set((state) => {
+  moveClip: (fromTrackId, arg2, arg3, arg4) => set((state) => {
+    // Backward-compatible signatures:
+    // - moveClip(fromTrackId, toTrackId, clipId, newStartBar)
+    // - moveClip(trackId, clipId, newStartBar)  // same-track move
+    const isLegacySignature = arg4 !== undefined;
+    const toTrackId = isLegacySignature ? arg2 : fromTrackId;
+    const clipId = isLegacySignature ? arg3 : arg2;
+    const newStartBar = isLegacySignature ? arg4 : arg3;
+
     // Find the clip
     const fromTrack = state.arrangement.tracks.find(t => t.id === fromTrackId);
     if (!fromTrack) return state;
@@ -782,6 +790,13 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       ...state.arrangement,
       loopStart: Math.max(0, start),
       loopEnd: Math.max(start + 1, end),
+    },
+  })),
+
+  setArrangementId: (id) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      id: id || null,
     },
   })),
 

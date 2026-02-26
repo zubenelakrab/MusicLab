@@ -16,8 +16,10 @@ export default function LayerScope({ layerIndex, isActive, isPlaying }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const phaseRef = useRef(Math.random() * Math.PI * 2); // Random phase offset per layer
+  const resizeObserverRef = useRef(null);
 
-  const color = SCOPE_COLORS[layerIndex % SCOPE_COLORS.length];
+  const safeLayerIndex = Number.isInteger(layerIndex) && layerIndex >= 0 ? layerIndex : 0;
+  const color = SCOPE_COLORS[safeLayerIndex % SCOPE_COLORS.length];
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,17 +79,17 @@ export default function LayerScope({ layerIndex, isActive, isPlaying }) {
       let x = 0;
 
       // Phase offset makes each layer look slightly different
-      const phase = phaseRef.current + timestamp * 0.001 * (layerIndex + 1) * 0.1;
+      const phase = phaseRef.current + timestamp * 0.001 * (safeLayerIndex + 1) * 0.1;
 
       for (let i = 0; i < bufferLength; i++) {
         let v;
         if (hasAudioData) {
           // Use real audio data with layer-specific offset
-          const offsetIndex = (i + layerIndex * 20) % bufferLength;
+          const offsetIndex = (i + safeLayerIndex * 20) % bufferLength;
           v = dataArray[offsetIndex] / 128.0;
         } else {
           // Simulated waveform when no audio
-          const freq = 2 + layerIndex * 0.5;
+          const freq = 2 + safeLayerIndex * 0.5;
           v = 1 + Math.sin(i * 0.1 * freq + phase) * 0.3;
         }
 
@@ -124,19 +126,34 @@ export default function LayerScope({ layerIndex, isActive, isPlaying }) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isActive, isPlaying, layerIndex, color]);
+  }, [isActive, isPlaying, safeLayerIndex, color]);
 
   // Set canvas size
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      // Match the container size
+    if (!canvas) return;
+
+    const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
       const ctx = canvas.getContext('2d');
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    }
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    };
+
+    resize();
+    resizeObserverRef.current = new ResizeObserver(resize);
+    resizeObserverRef.current.observe(canvas);
+
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+    };
   }, []);
 
   return (

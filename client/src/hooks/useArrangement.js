@@ -15,6 +15,7 @@ export function usePlayheadSync() {
     setPlayheadPosition,
     arrangement,
   } = useStore();
+  const playheadPosition = useStore((state) => state.playheadPosition);
 
   const lastUpdateRef = useRef(0);
 
@@ -61,7 +62,7 @@ export function usePlayheadSync() {
   }, [isPlaying, handlePlayheadUpdate]);
 
   return {
-    playheadPosition: useStore.getState().playheadPosition,
+    playheadPosition,
     isPlaying,
   };
 }

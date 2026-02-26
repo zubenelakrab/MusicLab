@@ -2416,8 +2416,16 @@ export default function Visualizer({ isOpen, onClose }) {
       ctx.putImageData(imgData, 0, 0);
     };
 
+    let lastFrameTime = 0;
+    const targetFrameInterval = 1000 / 45;
+
     const draw = (timestamp) => {
       const time = timestamp || 0;
+      if (time - lastFrameTime < targetFrameInterval) {
+        animationRef.current = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameTime = time;
 
       switch (mode) {
         case 'spectrum': drawSpectrum(time); break;
