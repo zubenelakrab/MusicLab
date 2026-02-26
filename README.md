@@ -207,6 +207,15 @@ MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) co
 
 ## Changelog
 
+### v2.0.1 (2026-02-26)
+- **Arrangement performance**: reduced unnecessary re-renders by migrating key views/hooks to Zustand selectors and isolating playhead updates.
+- **Step Sequencer randomization**: random button now randomizes both sound and available `:1`/`:2` sample variation under the same action.
+- **Automation/Groove UI**: improved floating controls panel readability and fixed value feedback for automation point sliders.
+- **Snap/Grid/Zoom fixes**: corrected snap behavior in drag/drop and ruler interactions; improved subdivision visuals and zoom-out floor handling.
+- **Playback sync fixes**: preview playback in Step/Melodic sequencers now correctly updates transport play state.
+- **Data safety**: server JSON store migrated to async I/O with route-level error handling and per-collection write serialization to reduce race-condition overwrites.
+- **Project persistence**: fixed arrangement ID persistence flow and related autosave reliability issues.
+
 ### v2.0.0 (2026-02-13)
 - **Visualizer overhaul**: 41 audio-reactive modes (spectrum, terrain, constellation, matrix, aurora, flame, and 35 more) organized in 7 categories with dropdown selector
 - **34 post-processing FX**: CRT, VHS, bloom, glitch, RGB split, beat zoom, screen shake, mirrors, and more — multi-select categorized panel
