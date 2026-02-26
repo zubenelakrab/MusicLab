@@ -5,17 +5,30 @@ import * as store from '../db/store.js';
 const router = Router();
 const COLLECTION = 'patterns';
 
+function handleStoreError(res, err) {
+  console.error('Patterns store error:', err);
+  return res.status(500).json({ error: 'Storage error' });
+}
+
 router.get('/', (req, res) => {
-  const patterns = store.getAll(COLLECTION);
-  res.json(patterns);
+  try {
+    const patterns = store.getAll(COLLECTION);
+    res.json(patterns);
+  } catch (err) {
+    return handleStoreError(res, err);
+  }
 });
 
 router.get('/:id', (req, res) => {
-  const pattern = store.getById(COLLECTION, req.params.id);
-  if (!pattern) {
-    return res.status(404).json({ error: 'Pattern not found' });
+  try {
+    const pattern = store.getById(COLLECTION, req.params.id);
+    if (!pattern) {
+      return res.status(404).json({ error: 'Pattern not found' });
+    }
+    res.json(pattern);
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.json(pattern);
 });
 
 router.post('/', (req, res) => {
@@ -43,8 +56,12 @@ router.post('/', (req, res) => {
     tags: tags || [],
     createdAt: Date.now()
   };
-  store.create(COLLECTION, pattern);
-  res.status(201).json(pattern);
+  try {
+    store.create(COLLECTION, pattern);
+    res.status(201).json(pattern);
+  } catch (err) {
+    return handleStoreError(res, err);
+  }
 });
 
 router.put('/:id', (req, res) => {
@@ -59,19 +76,27 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ error: 'Cannot change id' });
   }
 
-  const updated = store.update(COLLECTION, req.params.id, body);
-  if (!updated) {
-    return res.status(404).json({ error: 'Pattern not found' });
+  try {
+    const updated = store.update(COLLECTION, req.params.id, body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Pattern not found' });
+    }
+    res.json(updated);
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.json(updated);
 });
 
 router.delete('/:id', (req, res) => {
-  const deleted = store.remove(COLLECTION, req.params.id);
-  if (!deleted) {
-    return res.status(404).json({ error: 'Pattern not found' });
+  try {
+    const deleted = store.remove(COLLECTION, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Pattern not found' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.status(204).send();
 });
 
 export default router;

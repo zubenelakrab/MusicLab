@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 import { initAudio, startPreview, stopPreview } from '../../strudel/engine';
 import { generateId, generateTrackId, generateClipId } from '../../utils/id';
+import { SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
 
 // Euclidean rhythm generator (Bresenham/Bjorklund distribution)
 function euclidean(hits, totalSteps) {
@@ -22,38 +23,21 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-// Available drum/percussion sounds from dirt-samples
-// Only includes verified working samples
-const DEFAULT_SOUNDS = [
-  // Basics (verified in dirt-samples)
-  { id: 'bd', name: 'Kick', color: '#ef4444', category: 'basics' },
-  { id: 'sd', name: 'Snare', color: '#f97316', category: 'basics' },
-  { id: 'hh', name: 'HiHat', color: '#eab308', category: 'basics' },
-  { id: 'ho', name: 'HiHat Open', color: '#84cc16', category: 'basics' },
-  { id: 'cp', name: 'Clap', color: '#10b981', category: 'basics' },
-  { id: 'cr', name: 'Crash', color: '#ec4899', category: 'basics' },
-  { id: 'rd', name: 'Ride', color: '#14b8a6', category: 'basics' },
-  // Toms
-  { id: 'lt', name: 'Low Tom', color: '#f43f5e', category: 'toms' },
-  { id: 'mt', name: 'Mid Tom', color: '#fb7185', category: 'toms' },
-  { id: 'ht', name: 'High Tom', color: '#fda4af', category: 'toms' },
-  // Electronic
-  { id: 'drum', name: 'Drum', color: '#a855f7', category: 'electronic' },
-  { id: 'techno', name: 'Techno', color: '#c084fc', category: 'electronic' },
-  { id: 'clubkick', name: 'Club Kick', color: '#e879f9', category: 'electronic' },
-  // Percussion
-  { id: 'perc', name: 'Perc', color: '#0ea5e9', category: 'percussion' },
-  { id: 'tabla', name: 'Tabla', color: '#22c55e', category: 'percussion' },
-  { id: 'hand', name: 'Hand', color: '#bbf7d0', category: 'percussion' },
-  { id: 'can', name: 'Can', color: '#e0f2fe', category: 'percussion' },
-  { id: 'metal', name: 'Metal', color: '#67e8f9', category: 'percussion' },
-  // Bass & other
-  { id: 'bass', name: 'Bass', color: '#fb923c', category: 'misc' },
-  { id: 'glitch', name: 'Glitch', color: '#f87171', category: 'misc' },
-  { id: 'blip', name: 'Blip', color: '#fb7185', category: 'misc' },
-  { id: 'arpy', name: 'Arpy', color: '#c084fc', category: 'misc' },
-  { id: 'pluck', name: 'Pluck', color: '#34d399', category: 'misc' },
-];
+const SOUND_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#10b981', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e'];
+const colorFromId = (id) => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+  return SOUND_COLORS[Math.abs(hash) % SOUND_COLORS.length];
+};
+const supportsVariantSuffix = (sampleId) => !/\d$/.test(sampleId);
+// Mini notation used by StepSequencer doesn't handle leading numeric sample names well.
+const STEP_SAMPLE_NAMES = SAMPLE_NAMES.filter((id) => !/^\d/.test(id));
+const DEFAULT_SOUNDS = STEP_SAMPLE_NAMES.map((id) => ({
+  id,
+  name: id,
+  color: colorFromId(id),
+  category: 'all',
+}));
 
 // Pattern presets (1 = on, 0 = off)
 const PRESETS = [
@@ -464,8 +448,8 @@ const PRESETS = [
 ];
 
 const STEP_OPTIONS = [8, 16, 32];
-const CATEGORIES = ['basics', 'toms', 'electronic', 'percussion', 'misc'];
 const VELOCITY_GAIN = [0, 0.4, 0.7, 1.0];
+const INITIAL_SOUND_IDS = ['bd', 'sd', 'hh', 'cp'];
 
 // Track colors
 const TRACK_COLORS = [
@@ -479,7 +463,11 @@ export default function StepSequencer({ isOpen, onClose }) {
 
   // Core state
   const [steps, setSteps] = useState(16);
-  const [sounds, setSounds] = useState(DEFAULT_SOUNDS.slice(0, 4));
+  const [sounds, setSounds] = useState(
+    INITIAL_SOUND_IDS
+      .map((id) => DEFAULT_SOUNDS.find((s) => s.id === id))
+      .filter(Boolean)
+  );
   const [grid, setGrid] = useState({}); // {soundId: number[]} where 0=off, 1-3=velocity
   const [variations, setVariations] = useState({}); // {soundId: number} sample variation
   const [swing, setSwing] = useState(0); // 0-100%
@@ -565,7 +553,8 @@ export default function StepSequencer({ isOpen, onClose }) {
 
     const patterns = activeSounds.map(sound => {
       const variation = variations[sound.id] || 0;
-      const soundName = variation > 0 ? `${sound.id}:${variation}` : sound.id;
+      const canUseVariation = supportsVariantSuffix(sound.id);
+      const soundName = variation > 0 && canUseVariation ? `${sound.id}:${variation}` : sound.id;
       const rowVol = rowVolumes[sound.id] ?? 0.8;
       const soundGrid = Array.isArray(grid[sound.id]) ? grid[sound.id] : [];
 
@@ -895,6 +884,12 @@ export default function StepSequencer({ isOpen, onClose }) {
         reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,
         distortion: 0, hpf: 0, phaser: 0, phaserDepth: 0.5,
       },
+      groove: { swing: 0, humanize: 0 },
+      automation: {
+        gain: { enabled: false, min: 0, max: 1, points: [{ bar: 0, value: 1 }] },
+        pan: { enabled: false, min: -1, max: 1, points: [{ bar: 0, value: 0 }] },
+        cutoff: { enabled: false, min: 200, max: 12000, points: [{ bar: 0, value: 8000 }] },
+      },
       clips: [{
         id: clipId,
         patternId: null,
@@ -982,6 +977,66 @@ export default function StepSequencer({ isOpen, onClose }) {
       stopPreviewPlayback();
     }
     onClose();
+  };
+
+  const randomizeSounds = () => {
+    if (DEFAULT_SOUNDS.length < sounds.length) return;
+
+    const shuffled = [...DEFAULT_SOUNDS].sort(() => Math.random() - 0.5);
+    const nextSounds = shuffled.slice(0, sounds.length);
+    const oldSounds = sounds;
+
+    const nextGrid = {};
+    const nextVariations = {};
+    const nextRowMutes = {};
+    const nextRowSolos = {};
+    const nextRowVolumes = {};
+
+    nextSounds.forEach((newSound, index) => {
+      const oldSound = oldSounds[index];
+      nextGrid[newSound.id] = oldSound ? (grid[oldSound.id] || new Array(steps).fill(0)) : new Array(steps).fill(0);
+      const maxVariants = Math.max(1, SAMPLE_VARIANT_COUNTS[newSound.id] || 1);
+      if (supportsVariantSuffix(newSound.id) && maxVariants > 1) {
+        // Keep randomize under one button: pick :1 or :2 when those variations exist.
+        const available = [1, 2].filter((v) => v <= (maxVariants - 1));
+        nextVariations[newSound.id] = available.length
+          ? available[Math.floor(Math.random() * available.length)]
+          : 0;
+      } else {
+        nextVariations[newSound.id] = 0;
+      }
+      nextRowMutes[newSound.id] = oldSound ? !!rowMutes[oldSound.id] : false;
+      nextRowSolos[newSound.id] = oldSound ? !!rowSolos[oldSound.id] : false;
+      nextRowVolumes[newSound.id] = oldSound ? (rowVolumes[oldSound.id] ?? 0.8) : 0.8;
+    });
+
+    setSounds(nextSounds);
+    setGrid(nextGrid);
+    setVariations(nextVariations);
+    setRowMutes(nextRowMutes);
+    setRowSolos(nextRowSolos);
+    setRowVolumes(nextRowVolumes);
+  };
+
+  // Generate a musically-related variation from current pattern
+  const generateVariation = () => {
+    const density = randomDensity / 100;
+    setGrid(prev => {
+      const next = {};
+      Object.keys(prev).forEach(soundId => {
+        const row = prev[soundId] || [];
+        const shift = Math.random() < 0.5 ? 1 : -1;
+        const shifted = row.map((_, i) => row[(i - shift + row.length) % row.length] || 0);
+        next[soundId] = shifted.map((v) => {
+          // Keep some existing hits, remove some, add a few new ones.
+          if (v > 0 && Math.random() < 0.2) return 0;
+          if (v === 0 && Math.random() < density * 0.12) return Math.ceil(Math.random() * 3);
+          if (v > 0 && Math.random() < 0.2) return Math.min(3, Math.max(1, v + (Math.random() < 0.5 ? -1 : 1)));
+          return v;
+        });
+      });
+      return next;
+    });
   };
 
   if (!isOpen) return null;
@@ -1095,6 +1150,14 @@ export default function StepSequencer({ isOpen, onClose }) {
               <Shuffle size={12} />
               Random All
             </button>
+            <button
+              onClick={randomizeSounds}
+              className="px-2 py-1 text-xs bg-indigo-600/50 text-indigo-100 rounded hover:bg-indigo-600 flex items-center gap-1"
+              title="Randomly replace current row sounds"
+            >
+              <Shuffle size={12} />
+              Random Sounds
+            </button>
           </div>
 
           {/* Double */}
@@ -1104,6 +1167,13 @@ export default function StepSequencer({ isOpen, onClose }) {
             title="Copy first half pattern to second half"
           >
             Double
+          </button>
+          <button
+            onClick={generateVariation}
+            className="px-2 py-1 text-xs bg-indigo-600/50 text-indigo-100 rounded hover:bg-indigo-600"
+            title="Generate a variation from the current groove"
+          >
+            Variation
           </button>
         </div>
 
@@ -1230,19 +1300,17 @@ export default function StepSequencer({ isOpen, onClose }) {
                         onChange={(e) => changeSound(sound.id, e.target.value)}
                         className="flex-1 min-w-0 px-1 py-1 text-xs bg-studio-700 border border-studio-600 rounded text-white truncate ml-1"
                       >
-                        {CATEGORIES.map(category => (
-                          <optgroup key={category} label={category.charAt(0).toUpperCase() + category.slice(1)}>
-                            {DEFAULT_SOUNDS.filter(s => s.category === category).map(s => (
-                              <option
-                                key={s.id}
-                                value={s.id}
-                                disabled={sounds.some(x => x.id === s.id && x.id !== sound.id)}
-                              >
-                                {s.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
+                        <optgroup label="All Samples">
+                          {DEFAULT_SOUNDS.map(s => (
+                            <option
+                              key={s.id}
+                              value={s.id}
+                              disabled={sounds.some(x => x.id === s.id && x.id !== sound.id)}
+                            >
+                              {s.name}
+                            </option>
+                          ))}
+                        </optgroup>
                       </select>
 
                       {/* Sample variation selector */}
@@ -1250,9 +1318,14 @@ export default function StepSequencer({ isOpen, onClose }) {
                         value={variations[sound.id] || 0}
                         onChange={(e) => changeVariation(sound.id, Number(e.target.value))}
                         className="w-9 px-0.5 py-1 text-xs bg-studio-700 border border-studio-600 rounded text-gray-400 ml-0.5 flex-shrink-0"
-                        title="Sample variation"
+                        title={supportsVariantSuffix(sound.id) ? 'Sample variation' : 'This sample name does not safely support :variant syntax'}
+                        disabled={!supportsVariantSuffix(sound.id)}
                       >
-                        {Array.from({ length: 10 }, (_, i) => (
+                        {Array.from({
+                          length: supportsVariantSuffix(sound.id)
+                            ? Math.max(1, SAMPLE_VARIANT_COUNTS[sound.id] || 1)
+                            : 1,
+                        }, (_, i) => (
                           <option key={i} value={i}>:{i}</option>
                         ))}
                       </select>

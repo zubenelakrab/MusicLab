@@ -5,17 +5,30 @@ import * as store from '../db/store.js';
 const router = Router();
 const COLLECTION = 'projects';
 
+function handleStoreError(res, err) {
+  console.error('Projects store error:', err);
+  return res.status(500).json({ error: 'Storage error' });
+}
+
 router.get('/', (req, res) => {
-  const projects = store.getAll(COLLECTION);
-  res.json(projects);
+  try {
+    const projects = store.getAll(COLLECTION);
+    res.json(projects);
+  } catch (err) {
+    return handleStoreError(res, err);
+  }
 });
 
 router.get('/:id', (req, res) => {
-  const project = store.getById(COLLECTION, req.params.id);
-  if (!project) {
-    return res.status(404).json({ error: 'Project not found' });
+  try {
+    const project = store.getById(COLLECTION, req.params.id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    res.json(project);
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.json(project);
 });
 
 router.post('/', (req, res) => {
@@ -39,8 +52,12 @@ router.post('/', (req, res) => {
     tracks: tracks || [],
     createdAt: Date.now()
   };
-  store.create(COLLECTION, project);
-  res.status(201).json(project);
+  try {
+    store.create(COLLECTION, project);
+    res.status(201).json(project);
+  } catch (err) {
+    return handleStoreError(res, err);
+  }
 });
 
 router.put('/:id', (req, res) => {
@@ -55,19 +72,27 @@ router.put('/:id', (req, res) => {
     return res.status(400).json({ error: 'Cannot change id' });
   }
 
-  const updated = store.update(COLLECTION, req.params.id, body);
-  if (!updated) {
-    return res.status(404).json({ error: 'Project not found' });
+  try {
+    const updated = store.update(COLLECTION, req.params.id, body);
+    if (!updated) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    res.json(updated);
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.json(updated);
 });
 
 router.delete('/:id', (req, res) => {
-  const deleted = store.remove(COLLECTION, req.params.id);
-  if (!deleted) {
-    return res.status(404).json({ error: 'Project not found' });
+  try {
+    const deleted = store.remove(COLLECTION, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    return handleStoreError(res, err);
   }
-  res.status(204).send();
 });
 
 export default router;

@@ -997,18 +997,102 @@ export function resetPlaybackTime() {
 
 // Build a time mask pattern for a clip
 // Creates a pattern of 1s and 0s where 1 = clip is active
-function buildTimeMask(startBar, durationBars, totalBars) {
-  // Create array representing each bar: 1 = active, ~ = silent
+const ARRANGEMENT_STEPS_PER_BAR = 16;
+
+function buildTimeMask(startBar, durationBars, totalBars, stepsPerBar = ARRANGEMENT_STEPS_PER_BAR) {
+  const totalSteps = Math.max(1, Math.ceil(totalBars * stepsPerBar));
   const mask = [];
-  for (let i = 0; i < totalBars; i++) {
-    if (i >= startBar && i < startBar + durationBars) {
+  for (let step = 0; step < totalSteps; step++) {
+    const bar = step / stepsPerBar;
+    if (bar >= startBar && bar < startBar + durationBars) {
       mask.push('1');
     } else {
       mask.push('~');
     }
   }
-  // Return as mini notation string
   return mask.join(' ');
+}
+
+function hashString(value) {
+  let hash = 2166136261;
+  const str = String(value || '');
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return hash >>> 0;
+}
+
+function seededRandom(seed) {
+  const x = Math.sin(seed * 9301 + 49297) * 233280;
+  return x - Math.floor(x);
+}
+
+function getInterpolatedAutomationValue(points, bar) {
+  if (!points || points.length === 0) return null;
+  if (bar <= points[0].bar) return points[0].value;
+  if (bar >= points[points.length - 1].bar) return points[points.length - 1].value;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (bar >= a.bar && bar <= b.bar) {
+      const span = b.bar - a.bar;
+      if (span <= 0) return b.value;
+      const t = (bar - a.bar) / span;
+      return a.value + (b.value - a.value) * t;
+    }
+  }
+  return points[points.length - 1].value;
+}
+
+function buildAutomationValues(lane, effectiveStart, effectiveLength, stepsPerBar = ARRANGEMENT_STEPS_PER_BAR) {
+  if (!lane?.enabled || !Array.isArray(lane.points) || lane.points.length === 0) return null;
+  const points = [...lane.points]
+    .filter((p) => Number.isFinite(p.bar) && Number.isFinite(p.value))
+    .sort((a, b) => a.bar - b.bar);
+  if (points.length === 0) return null;
+
+  const totalSteps = Math.max(1, Math.ceil(effectiveLength * stepsPerBar));
+  const values = new Array(totalSteps);
+  for (let step = 0; step < totalSteps; step++) {
+    const bar = effectiveStart + (step / stepsPerBar);
+    const value = getInterpolatedAutomationValue(points, bar);
+    values[step] = Number(value.toFixed(3));
+  }
+  return values;
+}
+
+function applyAutomationToPattern(pattern, lane, methodName, effectiveStart, effectiveLength) {
+  const values = buildAutomationValues(lane, effectiveStart, effectiveLength);
+  if (!values || typeof pattern?.[methodName] !== 'function') return pattern;
+  const valuesPattern = mini(`[${values.join(' ')}]`).slow(effectiveLength);
+  return pattern[methodName](valuesPattern);
+}
+
+function applyGrooveToPattern(pattern, groove, effectiveLength, seedBase) {
+  if (!pattern) return pattern;
+
+  const swing = Number(groove?.swing || 0);
+  if (swing > 0 && typeof pattern.swing === 'function') {
+    pattern = pattern.swing((swing / 100) * 0.5);
+  }
+
+  // Velocity humanize: subtle gain motion for less robotic playback.
+  const humanize = Number(groove?.humanize || 0);
+  if (humanize > 0 && typeof pattern.gain === 'function') {
+    const totalSteps = Math.max(1, Math.ceil(effectiveLength * ARRANGEMENT_STEPS_PER_BAR));
+    const amount = Math.min(0.3, (humanize / 100) * 0.22);
+    const values = new Array(totalSteps);
+    const seed = hashString(seedBase);
+    for (let i = 0; i < totalSteps; i++) {
+      const jitter = (seededRandom(seed + i * 17) * 2 - 1) * amount;
+      values[i] = Number((1 + jitter).toFixed(3));
+    }
+    pattern = pattern.gain(mini(`[${values.join(' ')}]`).slow(effectiveLength));
+  }
+
+  return pattern;
 }
 
 // Build the full arrangement pattern from all tracks
@@ -1018,6 +1102,11 @@ export function buildArrangementPattern(arrangement, patternLibrary = []) {
 
   try {
     const { tracks, lengthBars, loopEnabled, loopStart, loopEnd } = arrangement;
+    const arrangementGroove = {
+      swing: 0,
+      humanize: 0,
+      ...(arrangement.groove || {}),
+    };
 
     // Use loop range if enabled, otherwise full arrangement
     const effectiveLength = loopEnabled ? (loopEnd - loopStart) : lengthBars;
@@ -1086,6 +1175,9 @@ export function buildArrangementPattern(arrangement, patternLibrary = []) {
         if (track.params.pan !== undefined && track.params.pan !== 0) {
           pattern = pattern.pan(track.params.pan);
         }
+        if (track.params.cutoff !== undefined && track.params.cutoff < 12000) {
+          pattern = pattern.cutoff(track.params.cutoff);
+        }
         if (track.params.reverb !== undefined && track.params.reverb > 0) {
           pattern = pattern.room(track.params.reverb);
         }
@@ -1105,6 +1197,23 @@ export function buildArrangementPattern(arrangement, patternLibrary = []) {
         // Apply the mask using mask() - this keeps the original rhythm
         // but silences the pattern outside the clip's time range
         let maskedPattern = pattern.mask(maskPattern);
+
+        // Apply track automation lanes (timeline-aware).
+        maskedPattern = applyAutomationToPattern(maskedPattern, track.automation?.gain, 'gain', effectiveStart, effectiveLength);
+        maskedPattern = applyAutomationToPattern(maskedPattern, track.automation?.pan, 'pan', effectiveStart, effectiveLength);
+        maskedPattern = applyAutomationToPattern(maskedPattern, track.automation?.cutoff, 'cutoff', effectiveStart, effectiveLength);
+
+        // Apply groove after automation.
+        const groove = {
+          ...arrangementGroove,
+          ...(track.groove || {}),
+        };
+        maskedPattern = applyGrooveToPattern(
+          maskedPattern,
+          groove,
+          effectiveLength,
+          `${track.id}:${clip.id}:${effectiveStart}:${effectiveLength}`
+        );
 
         allClipPatterns.push(maskedPattern);
       }

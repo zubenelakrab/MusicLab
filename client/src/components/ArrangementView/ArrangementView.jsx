@@ -28,7 +28,7 @@ export default function ArrangementView() {
 
   const scrollRef = useRef(null);
 
-  const { zoom, scrollX, pixelsPerBar, gridSubdivision } = arrangementView;
+  const { zoom, scrollX, pixelsPerBar, gridSubdivision, snapToGrid } = arrangementView;
   const effectivePixelsPerBar = pixelsPerBar * zoom;
   const totalWidth = arrangement.lengthBars * effectivePixelsPerBar;
 
@@ -74,7 +74,9 @@ export default function ArrangementView() {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const bar = x / effectivePixelsPerBar;
-    const snappedBar = Math.floor(bar * gridSubdivision) / gridSubdivision;
+    const snappedBar = snapToGrid
+      ? Math.floor(bar * gridSubdivision) / gridSubdivision
+      : bar;
 
     createInlineClip(trackId, snappedBar, 4);
   };
@@ -89,7 +91,9 @@ export default function ArrangementView() {
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const bar = x / effectivePixelsPerBar;
-      const snappedBar = Math.floor(bar * gridSubdivision) / gridSubdivision;
+      const snappedBar = snapToGrid
+        ? Math.floor(bar * gridSubdivision) / gridSubdivision
+        : bar;
 
       // Create inline clip with the pattern's code
       const store = useStore.getState();
@@ -136,6 +140,7 @@ export default function ArrangementView() {
                 pixelsPerBar={effectivePixelsPerBar}
                 scrollX={scrollX}
                 gridSubdivision={gridSubdivision}
+                snapToGrid={snapToGrid}
               />
             </div>
           </div>
@@ -181,7 +186,7 @@ export default function ArrangementView() {
                   >
                     {Array.from({ length: arrangement.lengthBars + 1 }, (_, i) => (
                       <line
-                        key={i}
+                        key={`bar-${i}`}
                         x1={i * effectivePixelsPerBar}
                         y1={0}
                         x2={i * effectivePixelsPerBar}
@@ -190,6 +195,23 @@ export default function ArrangementView() {
                         strokeWidth={i % 4 === 0 ? 1 : 0.5}
                       />
                     ))}
+                    {gridSubdivision > 1 && Array.from({ length: arrangement.lengthBars }, (_, barIdx) =>
+                      Array.from({ length: gridSubdivision - 1 }, (_, subIdx) => {
+                        const step = subIdx + 1;
+                        const x = (barIdx + step / gridSubdivision) * effectivePixelsPerBar;
+                        return (
+                          <line
+                            key={`sub-${barIdx}-${step}`}
+                            x1={x}
+                            y1={0}
+                            x2={x}
+                            y2="100%"
+                            stroke="#111827"
+                            strokeWidth={0.35}
+                          />
+                        );
+                      })
+                    )}
                   </svg>
 
                   {/* Clips */}

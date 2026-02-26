@@ -68,6 +68,7 @@ export function usePersistence() {
         loopEnabled: arrangement.loopEnabled,
         loopStart: arrangement.loopStart,
         loopEnd: arrangement.loopEnd,
+        groove: arrangement.groove,
       },
     };
 

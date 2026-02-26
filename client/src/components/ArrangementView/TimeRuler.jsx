@@ -6,6 +6,7 @@ export default function TimeRuler({
   pixelsPerBar,
   scrollX,
   gridSubdivision,
+  snapToGrid,
 }) {
   const { setPlayheadPosition, arrangement } = useStore();
   const rulerRef = useRef(null);
@@ -20,13 +21,16 @@ export default function TimeRuler({
     const x = e.clientX - rect.left + scrollX;
     const bar = x / pixelsPerBar;
 
-    // Snap to grid
-    const snappedBar = Math.round(bar * gridSubdivision) / gridSubdivision;
-    setPlayheadPosition(Math.max(0, Math.min(snappedBar, lengthBars)));
+    // Snap playhead only when snap is enabled
+    const targetBar = snapToGrid
+      ? Math.round(bar * gridSubdivision) / gridSubdivision
+      : bar;
+    setPlayheadPosition(Math.max(0, Math.min(targetBar, lengthBars)));
   };
 
   // Generate bar markers
   const markers = [];
+  const subdivisionMarkers = [];
   for (let bar = 0; bar <= lengthBars; bar++) {
     const x = bar * pixelsPerBar;
     const isMajor = bar % 4 === 0;
@@ -56,6 +60,18 @@ export default function TimeRuler({
         )}
       </div>
     );
+
+    if (bar < lengthBars && gridSubdivision > 1) {
+      for (let sub = 1; sub < gridSubdivision; sub++) {
+        subdivisionMarkers.push(
+          <div
+            key={`sub-${bar}-${sub}`}
+            className="absolute top-0 h-1.5 w-px bg-gray-700/80"
+            style={{ left: (bar + sub / gridSubdivision) * pixelsPerBar }}
+          />
+        );
+      }
+    }
   }
 
   // Loop markers
@@ -100,6 +116,7 @@ export default function TimeRuler({
         }}
       >
         {loopMarkers}
+        {subdivisionMarkers}
         {markers}
       </div>
     </div>

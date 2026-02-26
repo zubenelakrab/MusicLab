@@ -119,6 +119,12 @@ export default function PatternList() {
         phaser: 0,
         phaserDepth: 0.5,
       },
+      groove: { swing: 0, humanize: 0 },
+      automation: {
+        gain: { enabled: false, min: 0, max: 1, points: [{ bar: 0, value: 0.8 }] },
+        pan: { enabled: false, min: -1, max: 1, points: [{ bar: 0, value: 0 }] },
+        cutoff: { enabled: false, min: 200, max: 12000, points: [{ bar: 0, value: 8000 }] },
+      },
       clips: [{
         id: clipId,
         patternId: pattern.id,

@@ -22,6 +22,41 @@ const defaultLayerParams = {
   phaserDepth: 0.5,
 };
 
+const defaultGroove = {
+  swing: 0,
+  humanize: 0,
+};
+
+const AUTOMATION_BOUNDS = {
+  gain: { min: 0, max: 1 },
+  pan: { min: -1, max: 1 },
+  cutoff: { min: 200, max: 12000 },
+};
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+function getAutomationBounds(param) {
+  return AUTOMATION_BOUNDS[param] || { min: 0, max: 1 };
+}
+
+function createAutomationLane(param, initialValue) {
+  const { min, max } = getAutomationBounds(param);
+  return {
+    enabled: false,
+    min,
+    max,
+    points: [{ bar: 0, value: clamp(initialValue, min, max) }],
+  };
+}
+
+function createDefaultTrackAutomation(params = defaultLayerParams) {
+  return {
+    gain: createAutomationLane('gain', params.gain ?? 0.8),
+    pan: createAutomationLane('pan', params.pan ?? 0),
+    cutoff: createAutomationLane('cutoff', params.cutoff ?? 8000),
+  };
+}
+
 // Create a new layer
 const createLayer = (code = '', name = 'Layer') => ({
   id: generateId(),
@@ -47,8 +82,45 @@ const createTrack = (name = 'Track', colorIndex = 0) => ({
   solo: false,
   height: 100,
   params: { ...defaultLayerParams },
+  groove: { ...defaultGroove },
+  automation: createDefaultTrackAutomation(defaultLayerParams),
   clips: [],
 });
+
+function normalizeTrack(track = {}, colorIndex = 0) {
+  const base = createTrack(track.name || 'Track', colorIndex);
+  const params = { ...base.params, ...(track.params || {}) };
+  const automation = createDefaultTrackAutomation(params);
+
+  if (track.automation && typeof track.automation === 'object') {
+    Object.keys(automation).forEach((param) => {
+      const lane = track.automation[param];
+      if (!lane || typeof lane !== 'object') return;
+      const { min, max } = getAutomationBounds(param);
+      const points = Array.isArray(lane.points)
+        ? lane.points
+          .filter((p) => p && Number.isFinite(p.bar) && Number.isFinite(p.value))
+          .map((p) => ({ bar: Math.max(0, p.bar), value: clamp(p.value, min, max) }))
+          .sort((a, b) => a.bar - b.bar)
+        : automation[param].points;
+
+      automation[param] = {
+        ...automation[param],
+        enabled: Boolean(lane.enabled),
+        points: points.length > 0 ? points : automation[param].points,
+      };
+    });
+  }
+
+  return {
+    ...base,
+    ...track,
+    params,
+    groove: { ...defaultGroove, ...(track.groove || {}) },
+    automation,
+    clips: Array.isArray(track.clips) ? track.clips : [],
+  };
+}
 
 // Create a new clip
 const createClip = (startBar, durationBars, patternId = null, name = 'Clip', color = '#00d4aa', code = '') => ({
@@ -71,6 +143,8 @@ const createInitialArrangement = () => {
     solo: false,
     height: 100,
     params: { ...defaultLayerParams },
+    groove: { ...defaultGroove },
+    automation: createDefaultTrackAutomation(defaultLayerParams),
     clips: [
       {
         id: generateClipId(),
@@ -101,15 +175,40 @@ const createInitialArrangement = () => {
     solo: false,
     height: 100,
     params: { ...defaultLayerParams },
+    groove: { ...defaultGroove },
+    automation: createDefaultTrackAutomation(defaultLayerParams),
     clips: [
       {
         id: generateClipId(),
         patternId: null,
-        name: 'Bass Line',
+        name: 'Bass Groove',
         startBar: 0,
         durationBars: 8,
         color: TRACK_COLORS[1],
-        layers: [createLayer('bass bass:2 bass:3 bass', 'Bass')],
+        layers: [createLayer('[bass ~ bass:1 ~ bass:2 ~ bass:1 ~] , [~ bass:2 ~ bass:3 ~ bass:2 ~ bass:1]', 'Bass')],
+      },
+    ],
+  };
+
+  const melodyTrack = {
+    id: generateTrackId(),
+    name: 'Melody',
+    color: TRACK_COLORS[2],
+    muted: false,
+    solo: false,
+    height: 100,
+    params: { ...defaultLayerParams },
+    groove: { ...defaultGroove },
+    automation: createDefaultTrackAutomation(defaultLayerParams),
+    clips: [
+      {
+        id: generateClipId(),
+        patternId: null,
+        name: 'Lead Theme',
+        startBar: 0,
+        durationBars: 8,
+        color: TRACK_COLORS[2],
+        layers: [createLayer('note("c4 e4 g4 b4 a4 g4 e4 d4").sound("arpy").gain(0.72)', 'Lead')],
       },
     ],
   };
@@ -118,7 +217,8 @@ const createInitialArrangement = () => {
     id: null,
     name: 'Untitled',
     lengthBars: 32,
-    tracks: [drumsTrack, bassTrack],
+    tracks: [drumsTrack, bassTrack, melodyTrack],
+    groove: { ...defaultGroove },
     loopEnabled: false,
     loopStart: 0,
     loopEnd: 8,
@@ -407,6 +507,119 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       tracks: state.arrangement.tracks.map(t =>
         t.id === trackId ? { ...t, params: { ...t.params, ...params } } : t
       ),
+    },
+  })),
+
+  updateArrangementTrackGroove: (trackId, groove) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: state.arrangement.tracks.map(t =>
+        t.id === trackId
+          ? { ...t, groove: { ...defaultGroove, ...(t.groove || {}), ...groove } }
+          : t
+      ),
+    },
+  })),
+
+  toggleTrackAutomationLane: (trackId, param, enabled) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: state.arrangement.tracks.map((t) => {
+        if (t.id !== trackId || !t.automation?.[param]) return t;
+        return {
+          ...t,
+          automation: {
+            ...t.automation,
+            [param]: {
+              ...t.automation[param],
+              enabled: Boolean(enabled),
+            },
+          },
+        };
+      }),
+    },
+  })),
+
+  addTrackAutomationPoint: (trackId, param, bar, value) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: state.arrangement.tracks.map((t) => {
+        const lane = t.automation?.[param];
+        if (t.id !== trackId || !lane) return t;
+        const bounds = getAutomationBounds(param);
+        const points = [
+          ...(lane.points || []),
+          {
+            bar: Math.max(0, Number.isFinite(bar) ? bar : 0),
+            value: clamp(
+              Number.isFinite(value) ? value : (t.params?.[param] ?? lane.max),
+              bounds.min,
+              bounds.max
+            ),
+          },
+        ].sort((a, b) => a.bar - b.bar);
+
+        return {
+          ...t,
+          automation: {
+            ...t.automation,
+            [param]: { ...lane, points },
+          },
+        };
+      }),
+    },
+  })),
+
+  updateTrackAutomationPoint: (trackId, param, index, updates) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: state.arrangement.tracks.map((t) => {
+        const lane = t.automation?.[param];
+        if (t.id !== trackId || !lane || !lane.points?.[index]) return t;
+        const bounds = getAutomationBounds(param);
+        const points = lane.points
+          .map((point, i) => {
+            if (i !== index) return point;
+            return {
+              bar: Math.max(0, Number.isFinite(updates.bar) ? updates.bar : point.bar),
+              value: clamp(
+                Number.isFinite(updates.value) ? updates.value : point.value,
+                bounds.min,
+                bounds.max
+              ),
+            };
+          })
+          .sort((a, b) => a.bar - b.bar);
+
+        return {
+          ...t,
+          automation: {
+            ...t.automation,
+            [param]: { ...lane, points },
+          },
+        };
+      }),
+    },
+  })),
+
+  removeTrackAutomationPoint: (trackId, param, index) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: state.arrangement.tracks.map((t) => {
+        const lane = t.automation?.[param];
+        if (t.id !== trackId || !lane || !lane.points?.[index]) return t;
+        const points = lane.points.filter((_, i) => i !== index);
+        return {
+          ...t,
+          automation: {
+            ...t.automation,
+            [param]: {
+              ...lane,
+              points: points.length > 0 ? points : lane.points,
+            },
+          },
+        };
+      }),
     },
   })),
 
@@ -793,6 +1006,17 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     },
   })),
 
+  updateArrangementGroove: (groove) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      groove: {
+        ...defaultGroove,
+        ...(state.arrangement.groove || {}),
+        ...groove,
+      },
+    },
+  })),
+
   setArrangementId: (id) => set((state) => ({
     arrangement: {
       ...state.arrangement,
@@ -850,7 +1074,11 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       loopEnabled: project.arrangement?.loopEnabled || project.loopEnabled || false,
       loopStart: project.arrangement?.loopStart || project.loopStart || 0,
       loopEnd: project.arrangement?.loopEnd || project.loopEnd || 8,
-      tracks: project.tracks || project.arrangement?.tracks || [],
+      groove: {
+        ...defaultGroove,
+        ...(project.arrangement?.groove || project.groove || {}),
+      },
+      tracks: (project.tracks || project.arrangement?.tracks || []).map((track, i) => normalizeTrack(track, i)),
     },
     bpm: project.bpm || 120,
     editingClip: null,

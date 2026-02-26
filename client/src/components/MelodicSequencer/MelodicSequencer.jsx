@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
 import { initAudio, startMelodicPreview, stopPreview } from '../../strudel/engine';
 import { generateId, generateTrackId, generateClipId } from '../../utils/id';
+import { SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
 
 // Full chromatic scale
 const CHROMATIC_NOTES = ['c','c#','d','d#','e','f','f#','g','g#','a','a#','b'];
@@ -42,58 +43,9 @@ const NOTE_COLORS = {
 // Black keys for piano styling
 const BLACK_KEYS = new Set(['c#','d#','f#','g#','a#']);
 
-// Available synths - all tonal dirt-samples (loaded via github:tidalcycles/dirt-samples)
-const SYNTHS = [
-  // Synths
-  { id: 'arpy', name: 'Arpy', cat: 'Synths' },
-  { id: 'juno', name: 'Juno', cat: 'Synths' },
-  { id: 'fm', name: 'FM Synth', cat: 'Synths' },
-  { id: 'casio', name: 'Casio', cat: 'Synths' },
-  { id: 'psr', name: 'Yamaha PSR', cat: 'Synths' },
-  { id: 'sid', name: 'SID Chip', cat: 'Synths' },
-  { id: 'hoover', name: 'Hoover', cat: 'Synths' },
-  { id: 'simplesine', name: 'Simple Sine', cat: 'Synths' },
-  // Bass
-  { id: 'jvbass', name: 'JV Bass', cat: 'Bass' },
-  { id: 'bass', name: 'Bass', cat: 'Bass' },
-  { id: 'bass0', name: 'Bass 0', cat: 'Bass' },
-  { id: 'bass1', name: 'Bass 1', cat: 'Bass' },
-  { id: 'bass2', name: 'Bass 2', cat: 'Bass' },
-  { id: 'bass3', name: 'Bass 3', cat: 'Bass' },
-  { id: 'moog', name: 'Moog', cat: 'Bass' },
-  { id: 'jungbass', name: 'Jungle Bass', cat: 'Bass' },
-  // Keys / Plucked
-  { id: 'pluck', name: 'Pluck', cat: 'Keys' },
-  { id: 'newnotes', name: 'New Notes', cat: 'Keys' },
-  { id: 'notes', name: 'Notes', cat: 'Keys' },
-  { id: 'oc', name: 'Organ', cat: 'Keys' },
-  { id: 'sugar', name: 'Sugar', cat: 'Keys' },
-  { id: 'blip', name: 'Blip', cat: 'Keys' },
-  { id: 'bleep', name: 'Bleep', cat: 'Keys' },
-  { id: 'flick', name: 'Flick', cat: 'Keys' },
-  // Strings / Guitar / World
-  { id: 'gtr', name: 'Guitar', cat: 'Strings' },
-  { id: 'sitar', name: 'Sitar', cat: 'Strings' },
-  { id: 'sax', name: 'Saxophone', cat: 'Strings' },
-  { id: 'east', name: 'Eastern', cat: 'Strings' },
-  { id: 'peri', name: 'Peri', cat: 'Strings' },
-  { id: 'tabla', name: 'Tabla', cat: 'Strings' },
-  { id: 'tabla2', name: 'Tabla 2', cat: 'Strings' },
-  // Pads / Stabs
-  { id: 'pad', name: 'Pad', cat: 'Pads' },
-  { id: 'padlong', name: 'Pad Long', cat: 'Pads' },
-  { id: 'stab', name: 'Stab', cat: 'Pads' },
-  { id: 'rave', name: 'Rave', cat: 'Pads' },
-  { id: 'rave2', name: 'Rave 2', cat: 'Pads' },
-  { id: 'ravemono', name: 'Rave Mono', cat: 'Pads' },
-  { id: 'wobble', name: 'Wobble', cat: 'Pads' },
-  // Vocal / FX
-  { id: 'mouth', name: 'Mouth', cat: 'Vocal' },
-  { id: 'speech', name: 'Speech', cat: 'Vocal' },
-  { id: 'speechless', name: 'Speechless', cat: 'Vocal' },
-];
-
-const SYNTH_CATEGORIES = ['Synths', 'Bass', 'Keys', 'Strings', 'Pads', 'Vocal'];
+const SYNTHS = SAMPLE_NAMES.map((id) => ({ id, name: id, cat: 'All Samples' }));
+const SYNTH_CATEGORIES = ['All Samples'];
+const supportsVariantSuffix = (sampleId) => !/\d$/.test(sampleId);
 
 const VELOCITY_GAIN = [0, 0.40, 0.70, 1.00];
 
@@ -635,6 +587,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   const [steps, setSteps] = useState(16);
   const [grid, setGrid] = useState({}); // { stepIndex: { noteKey: velocity } }
   const [synth, setSynth] = useState('arpy');
+  const [synthVariation, setSynthVariation] = useState(0);
   const [rootNote, setRootNote] = useState('c');
   const [scale, setScale] = useState('chromatic');
   const [baseOctave, setBaseOctave] = useState(3);
@@ -762,7 +715,9 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     }
 
     const notePattern = noteSteps.join(' ');
-    const baseCode = `note("${notePattern}").sound("${synth}")`;
+    const canUseVariation = supportsVariantSuffix(synth);
+    const synthToken = synthVariation > 0 && canUseVariation ? `${synth}:${synthVariation}` : synth;
+    const baseCode = `note("${notePattern}").sound("${synthToken}")`;
 
     if (!hasVelocityVariation && firstVel !== null) {
       return Math.abs(firstVel - 1) > 0.01 ? `${baseCode}.gain(${firstVel.toFixed(2)})` : baseCode;
@@ -770,7 +725,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
 
     const gainPattern = gainSteps.join(' ');
     return `${baseCode}.gain([${gainPattern}])`;
-  }, [grid, steps, synth]);
+  }, [grid, steps, synth, synthVariation]);
 
   // Compute gain info for preview
   const getGainInfo = useCallback(() => {
@@ -968,6 +923,37 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     setGrid({});
   };
 
+  // Generate a melodic variation while preserving key/scale feel
+  const generateVariation = () => {
+    const visible = getVisibleNotes();
+    const noteIndex = new Map(visible.map((n, i) => [n.key, i]));
+    setGrid(prev => {
+      const next = {};
+      for (let step = 0; step < steps; step++) {
+        const cell = prev[step];
+        if (!cell || Math.random() < 0.12) continue;
+        const entries = Object.entries(cell);
+        const out = {};
+        for (const [noteKey, vel] of entries) {
+          const idx = noteIndex.get(noteKey);
+          if (idx === undefined) {
+            out[noteKey] = vel;
+            continue;
+          }
+          const jump = Math.random() < 0.65 ? (Math.random() < 0.5 ? -1 : 1) : (Math.random() < 0.5 ? -2 : 2);
+          const nextIdx = Math.max(0, Math.min(visible.length - 1, idx + jump));
+          const targetNote = visible[nextIdx].key;
+          const velJitter = Math.random() < 0.35 ? (Math.random() < 0.5 ? -1 : 1) : 0;
+          out[targetNote] = Math.min(3, Math.max(1, vel + velJitter));
+        }
+        if (Object.keys(out).length > 0) {
+          next[step] = out;
+        }
+      }
+      return next;
+    });
+  };
+
   // Helper: shift a note key by semitones
   function shiftNoteKey(noteKey, semitones) {
     const match = noteKey.match(/^([a-g]#?)(\d+)$/);
@@ -993,6 +979,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       stopPreviewPlayback();
     }
     setSynth(preset.synth);
+    setSynthVariation(0);
     const newGrid = JSON.parse(JSON.stringify(preset.grid));
     setGrid(newGrid);
     scrollToNotes(newGrid);
@@ -1025,6 +1012,12 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         gain: 1, cutoff: 8000, resonance: 0, speed: 1, pan: 0,
         reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,
         distortion: 0, hpf: 0, phaser: 0, phaserDepth: 0.5,
+      },
+      groove: { swing: 0, humanize: 0 },
+      automation: {
+        gain: { enabled: false, min: 0, max: 1, points: [{ bar: 0, value: 1 }] },
+        pan: { enabled: false, min: -1, max: 1, points: [{ bar: 0, value: 0 }] },
+        cutoff: { enabled: false, min: 200, max: 12000, points: [{ bar: 0, value: 8000 }] },
       },
       clips: [{
         id: clipId,
@@ -1075,7 +1068,9 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       const notePattern = generateNotePattern();
       if (notePattern) {
         const gainInfo = getGainInfo();
-        const result = await startMelodicPreview(notePattern, synth, bpm, gainInfo);
+        const canUseVariation = supportsVariantSuffix(synth);
+        const synthToken = synthVariation > 0 && canUseVariation ? `${synth}:${synthVariation}` : synth;
+        const result = await startMelodicPreview(notePattern, synthToken, bpm, gainInfo);
         if (result.success) {
           setIsPreviewPlaying(true);
           setCurrentStep(0);
@@ -1092,7 +1087,9 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         const updatePreviewPattern = async () => {
           stopPreviewPlayback(false);
           const gainInfo = getGainInfo();
-          const result = await startMelodicPreview(notePattern, synth, bpm, gainInfo);
+          const canUseVariation = supportsVariantSuffix(synth);
+          const synthToken = synthVariation > 0 && canUseVariation ? `${synth}:${synthVariation}` : synth;
+          const result = await startMelodicPreview(notePattern, synthToken, bpm, gainInfo);
           if (!result.success) {
             setIsPreviewPlaying(false);
           }
@@ -1100,7 +1097,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
         updatePreviewPattern();
       }
     }
-  }, [grid, synth]);
+  }, [grid, synth, synthVariation]);
 
   // Cleanup
   useEffect(() => {
@@ -1181,7 +1178,10 @@ export default function MelodicSequencer({ isOpen, onClose }) {
             <span className="text-xs text-gray-400">Synth:</span>
             <select
               value={synth}
-              onChange={(e) => setSynth(e.target.value)}
+              onChange={(e) => {
+                setSynth(e.target.value);
+                setSynthVariation(0);
+              }}
               className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
             >
               {SYNTH_CATEGORIES.map(cat => (
@@ -1190,6 +1190,21 @@ export default function MelodicSequencer({ isOpen, onClose }) {
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </optgroup>
+              ))}
+            </select>
+            <select
+              value={synthVariation}
+              onChange={(e) => setSynthVariation(Number(e.target.value))}
+              className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white"
+              title={supportsVariantSuffix(synth) ? 'Sample variation' : 'This sample name does not safely support :variant syntax'}
+              disabled={!supportsVariantSuffix(synth)}
+            >
+              {Array.from({
+                length: supportsVariantSuffix(synth)
+                  ? Math.max(1, SAMPLE_VARIANT_COUNTS[synth] || 1)
+                  : 1,
+              }, (_, i) => (
+                <option key={i} value={i}>:{i}</option>
               ))}
             </select>
           </div>
@@ -1291,6 +1306,9 @@ export default function MelodicSequencer({ isOpen, onClose }) {
 
           <button onClick={doublePattern} className="px-2 py-0.5 text-xs bg-studio-600 text-gray-300 rounded hover:bg-studio-500" title="Copy first half to second half">
             Double
+          </button>
+          <button onClick={generateVariation} className="px-2 py-0.5 text-xs bg-indigo-600/50 text-indigo-100 rounded hover:bg-indigo-600" title="Generate melodic variation">
+            Variation
           </button>
 
           <div className="w-px h-4 bg-studio-600 mx-1" />

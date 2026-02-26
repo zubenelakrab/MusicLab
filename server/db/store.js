@@ -14,13 +14,23 @@ function readCollection(collection) {
   if (!existsSync(filePath)) {
     return [];
   }
-  const data = readFileSync(filePath, 'utf-8');
-  return JSON.parse(data);
+  try {
+    const data = readFileSync(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error(`Error parsing ${collection}.json:`, err);
+    throw new Error(`Failed to read ${collection} collection`);
+  }
 }
 
 function writeCollection(collection, data) {
   const filePath = getFilePath(collection);
-  writeFileSync(filePath, JSON.stringify(data, null, 2));
+  try {
+    writeFileSync(filePath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error(`Error writing ${collection}.json:`, err);
+    throw new Error(`Failed to write ${collection} collection`);
+  }
 }
 
 export function getAll(collection) {

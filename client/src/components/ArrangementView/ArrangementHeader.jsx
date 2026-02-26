@@ -11,12 +11,20 @@ export default function ArrangementHeader() {
     setSnapToGrid,
     setGridSubdivision,
     toggleLoop,
+    updateArrangementGroove,
   } = useStore();
 
   const { zoom, snapToGrid, gridSubdivision } = arrangementView;
+  const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 
-  const handleZoomIn = () => setArrangementZoom(zoom * 1.25);
-  const handleZoomOut = () => setArrangementZoom(zoom / 1.25);
+  const handleZoomIn = () => {
+    const next = ZOOM_STEPS.find((z) => z > zoom);
+    if (next) setArrangementZoom(next);
+  };
+  const handleZoomOut = () => {
+    const previous = [...ZOOM_STEPS].reverse().find((z) => z < zoom);
+    if (previous !== undefined) setArrangementZoom(previous);
+  };
 
   const gridOptions = [
     { value: 1, label: '1 bar' },
@@ -58,7 +66,13 @@ export default function ArrangementHeader() {
         <select
           value={gridSubdivision}
           onChange={(e) => setGridSubdivision(Number(e.target.value))}
-          className="px-2 py-1 text-xs bg-studio-600 border border-studio-500 rounded text-white focus:outline-none focus:border-accent-primary"
+          disabled={!snapToGrid}
+          className={`px-2 py-1 text-xs border rounded focus:outline-none ${
+            snapToGrid
+              ? 'bg-studio-600 border-studio-500 text-white focus:border-accent-primary'
+              : 'bg-studio-700 border-studio-700 text-gray-500 cursor-not-allowed'
+          }`}
+          title={snapToGrid ? 'Snap subdivision' : 'Enable Snap first'}
         >
           {gridOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -80,6 +94,23 @@ export default function ArrangementHeader() {
           <Repeat size={12} />
           Loop
         </button>
+
+        {/* Global groove swing */}
+        <div className="flex items-center gap-1.5 border-l border-studio-600 pl-3">
+          <span className="text-[10px] text-gray-400">Swing</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={arrangement.groove?.swing || 0}
+            onChange={(e) => updateArrangementGroove({ swing: Number(e.target.value) })}
+            className="w-20 h-1 accent-accent-primary"
+          />
+          <span className="text-[10px] text-gray-500 w-8 text-right">
+            {Math.round(arrangement.groove?.swing || 0)}%
+          </span>
+        </div>
       </div>
 
       {/* Right section - Zoom & Length */}
@@ -102,12 +133,12 @@ export default function ArrangementHeader() {
 
         {/* Zoom controls */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={handleZoomOut}
-            disabled={zoom <= 0.25}
-            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Zoom out"
-          >
+            <button
+              onClick={handleZoomOut}
+              disabled={zoom <= ZOOM_STEPS[0]}
+              className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Zoom out"
+            >
             <ZoomOut size={16} />
           </button>
 
@@ -127,12 +158,12 @@ export default function ArrangementHeader() {
             />
           </div>
 
-          <button
-            onClick={handleZoomIn}
-            disabled={zoom >= 4}
-            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Zoom in"
-          >
+            <button
+              onClick={handleZoomIn}
+              disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]}
+              className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Zoom in"
+            >
             <ZoomIn size={16} />
           </button>
 
