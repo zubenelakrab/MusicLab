@@ -1,6 +1,6 @@
 {
   "name": "@zubenelakrab/musiclab",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Web-based music production environment with live coding and visual sequencers, built on Strudel",
   "private": false,
   "type": "module",
