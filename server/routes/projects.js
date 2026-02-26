@@ -10,18 +10,18 @@ function handleStoreError(res, err) {
   return res.status(500).json({ error: 'Storage error' });
 }
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const projects = store.getAll(COLLECTION);
+    const projects = await store.getAll(COLLECTION);
     res.json(projects);
   } catch (err) {
     return handleStoreError(res, err);
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const project = store.getById(COLLECTION, req.params.id);
+    const project = await store.getById(COLLECTION, req.params.id);
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
@@ -31,7 +31,7 @@ router.get('/:id', (req, res) => {
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { name, bpm, tracks } = req.body;
 
   // Validate input
@@ -53,14 +53,14 @@ router.post('/', (req, res) => {
     createdAt: Date.now()
   };
   try {
-    store.create(COLLECTION, project);
+    await store.create(COLLECTION, project);
     res.status(201).json(project);
   } catch (err) {
     return handleStoreError(res, err);
   }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const body = req.body;
 
   // Validate body is an object
@@ -73,7 +73,7 @@ router.put('/:id', (req, res) => {
   }
 
   try {
-    const updated = store.update(COLLECTION, req.params.id, body);
+    const updated = await store.update(COLLECTION, req.params.id, body);
     if (!updated) {
       return res.status(404).json({ error: 'Project not found' });
     }
@@ -83,9 +83,9 @@ router.put('/:id', (req, res) => {
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = store.remove(COLLECTION, req.params.id);
+    const deleted = await store.remove(COLLECTION, req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Project not found' });
     }

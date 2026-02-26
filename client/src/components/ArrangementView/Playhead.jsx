@@ -1,7 +1,8 @@
 import { useStore } from '../../store';
 
-export default function Playhead({ position, pixelsPerBar, scrollX }) {
-  const { isPlaying } = useStore();
+export default function Playhead({ pixelsPerBar, scrollX }) {
+  const isPlaying = useStore((state) => state.isPlaying);
+  const position = useStore((state) => state.playheadPosition);
 
   const left = position * pixelsPerBar;
 

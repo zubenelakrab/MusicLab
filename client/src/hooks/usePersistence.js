@@ -5,7 +5,9 @@ const AUTOSAVE_KEY = 'musiclab_autosave';
 const DEBOUNCE_MS = 2000;
 
 export function usePersistence() {
-  const { arrangement, bpm, _arrangementVersion } = useStore();
+  const arrangement = useStore((state) => state.arrangement);
+  const bpm = useStore((state) => state.bpm);
+  const _arrangementVersion = useStore((state) => state._arrangementVersion);
   const timerRef = useRef(null);
   const restoredRef = useRef(false);
 

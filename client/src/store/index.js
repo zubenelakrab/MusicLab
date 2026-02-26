@@ -854,6 +854,34 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     };
   }),
 
+  // Add clip with specific code (useful for drag & drop)
+  addClipWithCode: (trackId, startBar, durationBars, name, code) => set((state) => {
+    const track = state.arrangement.tracks.find(t => t.id === trackId);
+    if (!track) return state;
+
+    const newClip = createClip(startBar, durationBars, null, name || 'Clip', track.color);
+    if (newClip.layers?.[0]) {
+      newClip.layers[0].code = code;
+    }
+
+    return {
+      arrangement: {
+        ...state.arrangement,
+        tracks: state.arrangement.tracks.map(t =>
+          t.id === trackId
+            ? { ...t, clips: [...t.clips, newClip] }
+            : t
+        ),
+      },
+      arrangementView: {
+        ...state.arrangementView,
+        selectedClipIds: [newClip.id],
+        selectedTrackId: trackId,
+      },
+      editingClip: { trackId, clipId: newClip.id },
+    };
+  }),
+
   // Update inline clip layers
   updateClipLayers: (trackId, clipId, layers) => set((state) => ({
     arrangement: {

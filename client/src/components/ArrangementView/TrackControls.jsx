@@ -4,22 +4,21 @@ import { createPortal } from 'react-dom';
 import { useStore } from '../../store';
 
 export default function TrackControls({ track }) {
-  const {
-    toggleArrangementTrackMute,
-    toggleArrangementTrackSolo,
-    updateArrangementTrackParams,
-    updateArrangementTrackGroove,
-    toggleTrackAutomationLane,
-    addTrackAutomationPoint,
-    updateTrackAutomationPoint,
-    removeTrackAutomationPoint,
-    updateArrangementTrack,
-    removeArrangementTrack,
-    arrangement,
-    arrangementView,
-    playheadPosition,
-    selectTrack,
-  } = useStore();
+  const toggleArrangementTrackMute = useStore((state) => state.toggleArrangementTrackMute);
+  const toggleArrangementTrackSolo = useStore((state) => state.toggleArrangementTrackSolo);
+  const updateArrangementTrackParams = useStore((state) => state.updateArrangementTrackParams);
+  const updateArrangementTrackGroove = useStore((state) => state.updateArrangementTrackGroove);
+  const toggleTrackAutomationLane = useStore((state) => state.toggleTrackAutomationLane);
+  const addTrackAutomationPoint = useStore((state) => state.addTrackAutomationPoint);
+  const updateTrackAutomationPoint = useStore((state) => state.updateTrackAutomationPoint);
+  const removeTrackAutomationPoint = useStore((state) => state.removeTrackAutomationPoint);
+  const updateArrangementTrack = useStore((state) => state.updateArrangementTrack);
+  const removeArrangementTrack = useStore((state) => state.removeArrangementTrack);
+  const selectTrack = useStore((state) => state.selectTrack);
+  const arrangementLengthBars = useStore((state) => state.arrangement.lengthBars);
+  const arrangementTrackCount = useStore((state) => state.arrangement.tracks.length);
+  const selectedTrackId = useStore((state) => state.arrangementView.selectedTrackId);
+  const playheadPosition = useStore((state) => state.playheadPosition);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(track.name);
@@ -28,8 +27,8 @@ export default function TrackControls({ track }) {
   const [panelPosition, setPanelPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef(null);
 
-  const canDelete = arrangement.tracks.length > 1;
-  const isSelected = arrangementView.selectedTrackId === track.id;
+  const canDelete = arrangementTrackCount > 1;
+  const isSelected = selectedTrackId === track.id;
 
   const handleNameSubmit = () => {
     if (editName.trim()) {
@@ -57,7 +56,7 @@ export default function TrackControls({ track }) {
     addTrackAutomationPoint(
       track.id,
       automationParam,
-      Math.min(arrangement.lengthBars, playheadPosition),
+      Math.min(arrangementLengthBars, playheadPosition),
       track.params?.[automationParam] ?? lane.max
     );
   };
@@ -305,7 +304,7 @@ export default function TrackControls({ track }) {
                   <input
                     type="number"
                     min={0}
-                    max={arrangement.lengthBars}
+                    max={arrangementLengthBars}
                     step={0.25}
                     value={Number(point.bar.toFixed(2))}
                     onChange={(e) => updateTrackAutomationPoint(track.id, automationParam, index, { bar: Number(e.target.value) })}

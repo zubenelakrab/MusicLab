@@ -11,20 +11,19 @@ import Playhead from './Playhead';
 const TRACK_CONTROLS_WIDTH = 180;
 
 export default function ArrangementView() {
-  const {
-    arrangement,
-    arrangementView,
-    playheadPosition,
-    setArrangementScrollX,
-    addArrangementTrack,
-    createInlineClip,
-    deleteSelectedClips,
-    clearSelection,
-    selectTrack,
-  } = useStore();
+  const arrangement = useStore((state) => state.arrangement);
+  const arrangementView = useStore((state) => state.arrangementView);
+  const setArrangementScrollX = useStore((state) => state.setArrangementScrollX);
+  const addArrangementTrack = useStore((state) => state.addArrangementTrack);
+  const createInlineClip = useStore((state) => state.createInlineClip);
+  const deleteSelectedClips = useStore((state) => state.deleteSelectedClips);
+  const clearSelection = useStore((state) => state.clearSelection);
+  const selectTrack = useStore((state) => state.selectTrack);
 
   // Sync playhead with engine
   usePlayheadSync();
+
+  const addClipWithCode = useStore((state) => state.addClipWithCode);
 
   const scrollRef = useRef(null);
 
@@ -96,20 +95,7 @@ export default function ArrangementView() {
         : bar;
 
       // Create inline clip with the pattern's code
-      const store = useStore.getState();
-      const track = store.arrangement.tracks.find(t => t.id === trackId);
-      if (track) {
-        store.addClip(trackId, snappedBar, 4, null, patternName || 'Clip');
-        // Get the newly created clip and update its layers with the code
-        const updatedTrack = useStore.getState().arrangement.tracks.find(t => t.id === trackId);
-        const newClip = updatedTrack.clips[updatedTrack.clips.length - 1];
-        if (newClip && newClip.layers) {
-          const newLayers = newClip.layers.map((layer, i) =>
-            i === 0 ? { ...layer, code: patternCode } : layer
-          );
-          store.updateClipLayers(trackId, newClip.id, newLayers);
-        }
-      }
+      addClipWithCode(trackId, snappedBar, 4, patternName || 'Clip', patternCode);
     }
   };
 
@@ -257,7 +243,6 @@ export default function ArrangementView() {
             }}
           >
             <Playhead
-              position={playheadPosition}
               pixelsPerBar={effectivePixelsPerBar}
               scrollX={scrollX}
             />

@@ -4,7 +4,8 @@ import { useStrudel } from '../../hooks/useStrudel';
 import { useRecording } from '../../hooks/useRecording';
 
 export default function Controls() {
-  const { bpm, setBpm } = useStore();
+  const bpm = useStore((state) => state.bpm);
+  const setBpm = useStore((state) => state.setBpm);
   const { isPlaying, toggle, error, audioReady } = useStrudel();
   const {
     isRecording,

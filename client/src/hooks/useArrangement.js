@@ -10,11 +10,9 @@ import {
 
 // Hook to sync playhead with arrangement view
 export function usePlayheadSync() {
-  const {
-    isPlaying,
-    setPlayheadPosition,
-    arrangement,
-  } = useStore();
+  const isPlaying = useStore((state) => state.isPlaying);
+  const setPlayheadPosition = useStore((state) => state.setPlayheadPosition);
+  const arrangement = useStore((state) => state.arrangement);
   const playheadPosition = useStore((state) => state.playheadPosition);
 
   const lastUpdateRef = useRef(0);
@@ -69,11 +67,9 @@ export function usePlayheadSync() {
 
 // Hook to manage arrangement playback state
 export function useArrangementPlayback() {
-  const {
-    arrangement,
-    patterns,
-    bpm,
-  } = useStore();
+  const arrangement = useStore((state) => state.arrangement);
+  const patterns = useStore((state) => state.patterns);
+  const bpm = useStore((state) => state.bpm);
 
   // Get current playback position
   const getCurrentPosition = useCallback(() => {

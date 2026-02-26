@@ -6,15 +6,13 @@ import logger from '../utils/logger';
 export function useStrudel() {
   const [audioReady, setAudioReady] = useState(false);
   const [error, setError] = useState(null);
-  const {
-    isPlaying,
-    bpm,
-    arrangement,
-    patterns,
-    _arrangementVersion,
-    setPlaying,
-    setPlayheadPosition,
-  } = useStore();
+  const isPlaying = useStore((state) => state.isPlaying);
+  const bpm = useStore((state) => state.bpm);
+  const arrangement = useStore((state) => state.arrangement);
+  const patterns = useStore((state) => state.patterns);
+  const _arrangementVersion = useStore((state) => state._arrangementVersion);
+  const setPlaying = useStore((state) => state.setPlaying);
+  const setPlayheadPosition = useStore((state) => state.setPlayheadPosition);
 
   // Track arrangement for change detection (version-based)
   const lastVersionRef = useRef(_arrangementVersion);

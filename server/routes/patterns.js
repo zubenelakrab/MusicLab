@@ -10,18 +10,18 @@ function handleStoreError(res, err) {
   return res.status(500).json({ error: 'Storage error' });
 }
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const patterns = store.getAll(COLLECTION);
+    const patterns = await store.getAll(COLLECTION);
     res.json(patterns);
   } catch (err) {
     return handleStoreError(res, err);
   }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const pattern = store.getById(COLLECTION, req.params.id);
+    const pattern = await store.getById(COLLECTION, req.params.id);
     if (!pattern) {
       return res.status(404).json({ error: 'Pattern not found' });
     }
@@ -31,7 +31,7 @@ router.get('/:id', (req, res) => {
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { name, code, params, tags } = req.body;
 
   // Validate input
@@ -57,14 +57,14 @@ router.post('/', (req, res) => {
     createdAt: Date.now()
   };
   try {
-    store.create(COLLECTION, pattern);
+    await store.create(COLLECTION, pattern);
     res.status(201).json(pattern);
   } catch (err) {
     return handleStoreError(res, err);
   }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const body = req.body;
 
   // Validate body is an object
@@ -77,7 +77,7 @@ router.put('/:id', (req, res) => {
   }
 
   try {
-    const updated = store.update(COLLECTION, req.params.id, body);
+    const updated = await store.update(COLLECTION, req.params.id, body);
     if (!updated) {
       return res.status(404).json({ error: 'Pattern not found' });
     }
@@ -87,9 +87,9 @@ router.put('/:id', (req, res) => {
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const deleted = store.remove(COLLECTION, req.params.id);
+    const deleted = await store.remove(COLLECTION, req.params.id);
     if (!deleted) {
       return res.status(404).json({ error: 'Pattern not found' });
     }

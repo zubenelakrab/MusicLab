@@ -8,7 +8,8 @@ export default function TimeRuler({
   gridSubdivision,
   snapToGrid,
 }) {
-  const { setPlayheadPosition, arrangement } = useStore();
+  const setPlayheadPosition = useStore((state) => state.setPlayheadPosition);
+  const arrangement = useStore((state) => state.arrangement);
   const rulerRef = useRef(null);
 
   const totalWidth = lengthBars * pixelsPerBar;
