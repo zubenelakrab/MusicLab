@@ -295,16 +295,16 @@ function SampleButton({ sample, desc, onInsert, onOpenVariants }) {
       onContextMenu={handleRightClick}
       title={desc || (hasVariants ? `${sample} (${variantCount} variants)` : sample)}
       className={`
-        relative px-2 py-2 text-xs rounded transition-all truncate text-left
+        relative px-2 py-2 text-xs rounded transition-all truncate text-left border
         ${isPlaying
-          ? 'bg-accent-primary text-black scale-105'
-          : 'bg-studio-600 hover:bg-accent-tertiary hover:text-black'
+          ? 'bg-accent-primary text-studio-950 scale-105 shadow-glow-primary border-transparent'
+          : 'bg-studio-800 text-gray-300 border-studio-700 hover:bg-studio-700 hover:text-white hover:border-studio-500 shadow-sm'
         }
       `}
     >
       {sample}
       {hasVariants && (
-        <span className="absolute -top-1 right-0.5 text-[9px] text-blue-400 font-medium">
+        <span className="absolute -top-1 right-0.5 text-[9px] text-accent-tertiary font-medium">
           +{variantCount}
         </span>
       )}
@@ -313,7 +313,9 @@ function SampleButton({ sample, desc, onInsert, onOpenVariants }) {
 }
 
 export default function SamplePad() {
-  const { editingClip, arrangement, updateEditingClipCode } = useStore();
+  const editingClip = useStore((state) => state.editingClip);
+  const arrangement = useStore((state) => state.arrangement);
+  const updateEditingClipCode = useStore((state) => state.updateEditingClipCode);
   const [searchTerm, setSearchTerm] = useState('');
   const [variantPopup, setVariantPopup] = useState(null); // { sample, position }
 
@@ -373,38 +375,38 @@ export default function SamplePad() {
   const totalSamples = SAMPLE_NAMES.length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden bg-studio-900 border-l border-studio-700">
       <div className="px-3 py-2 pro-header">
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
-            <span className="text-sm text-gray-400 font-medium">Samples</span>
-            <span className="text-xs text-gray-500">
+            <span className="text-sm text-gray-300 font-medium">Samples</span>
+            <span className="text-[10px] text-studio-500 uppercase tracking-wider">
               {hasEditingClip ? 'Click to add to clip' : 'Select a clip first'}
             </span>
           </div>
         </div>
         {/* Search input */}
         <div className="relative">
-          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
+          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-studio-500" />
           <input
             type="text"
             placeholder="Search sample..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-pro w-full pl-7 pr-2 py-1 text-sm rounded text-white placeholder-gray-500"
+            className="input-pro w-full pl-7 pr-2 py-1 text-sm rounded text-gray-200 placeholder-studio-500"
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {/* Search results */}
         {filteredSamples ? (
           <div>
-            <h4 className="text-xs text-gray-500 uppercase mb-2">
+            <h4 className="text-[10px] font-bold text-studio-500 uppercase tracking-wider mb-2">
               Results ({filteredSamples.length})
             </h4>
             {filteredSamples.length === 0 ? (
-              <p className="text-xs text-gray-600">Not found</p>
+              <p className="text-xs text-studio-500">Not found</p>
             ) : (
               <div className="grid grid-cols-3 gap-1 max-h-96 overflow-y-auto">
                 {filteredSamples.map((sample) => (
@@ -422,15 +424,15 @@ export default function SamplePad() {
           <>
             {/* Operators with tooltips */}
             <div>
-              <h4 className="text-xs text-gray-500 uppercase mb-2">
-                Operators <span className="text-gray-600">(hover = info)</span>
+              <h4 className="text-[10px] font-bold text-studio-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+                Operators <span className="font-normal opacity-70">(hover = info)</span>
               </h4>
               <div className="flex flex-wrap gap-1">
                 {OPERATORS.map((op) => (
                   <OperatorTooltip key={op.symbol} op={op}>
                     <button
                       onClick={() => insertOperator(op.symbol)}
-                      className="btn-pro px-2 py-1 text-xs bg-studio-600 hover:bg-accent-primary hover:text-black rounded-lg transition-colors"
+                      className="btn-pro px-2 py-1 text-xs bg-studio-800 text-gray-300 hover:bg-studio-700 hover:text-white shadow-hardware-btn rounded-md transition-colors"
                     >
                       {op.label}
                     </button>

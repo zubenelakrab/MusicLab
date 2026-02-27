@@ -207,6 +207,10 @@ MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) co
 
 ## Changelog
 
+### v2.0.2 (2026-02-27)
+- **Pro Tactile UI**: Complete visual overhaul replacing flat glows with a deeper "slate" theme, inset panels, and hardware-style tactile buttons for a more professional DAW experience.
+- **NFO About Modal**: Added a classic cracking-scene style NFO viewer modal with ASCII art, CRT effects, and scrolling marquees.
+
 ### v2.0.1 (2026-02-26)
 - **Arrangement performance**: reduced unnecessary re-renders by migrating key views/hooks to Zustand selectors and isolating playhead updates.
 - **Step Sequencer randomization**: random button now randomizes both sound and available `:1`/`:2` sample variation under the same action.

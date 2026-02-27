@@ -107,7 +107,7 @@ export default function ArrangementView() {
       {/* Main scrollable area - unified scroll for controls and clips */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-auto"
+        className="flex-1 overflow-auto panel-inset bg-studio-950 m-2 rounded-lg"
         onScroll={handleScroll}
       >
         {/* Content wrapper with min-width for horizontal scroll */}

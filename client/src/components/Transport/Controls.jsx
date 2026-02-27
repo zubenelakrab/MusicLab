@@ -31,17 +31,17 @@ export default function Controls() {
       {/* Play/Stop button */}
       <button
         onClick={toggle}
-        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
           isPlaying
-            ? 'bg-accent-secondary hover:bg-red-500 shadow-glow-secondary animate-glow-pulse'
-            : 'bg-accent-primary hover:bg-emerald-400 shadow-glow-primary'
+            ? 'bg-accent-primary text-studio-950 shadow-glow-primary shadow-inner-glow'
+            : 'bg-studio-700 text-gray-300 shadow-hardware-btn hover:bg-studio-600 hover:text-white'
         }`}
         title={isPlaying ? 'Stop' : 'Play'}
       >
         {isPlaying ? (
-          <Square size={14} fill="currentColor" />
+          <Square size={16} fill="currentColor" />
         ) : (
-          <Play size={16} fill="currentColor" className="ml-0.5" />
+          <Play size={18} fill="currentColor" className="ml-1" />
         )}
       </button>
 
@@ -49,17 +49,17 @@ export default function Controls() {
       <button
         onClick={handleRecordClick}
         disabled={!audioReady}
-        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
           isRecording
-            ? 'bg-red-600 hover:bg-red-500 animate-glow-pulse shadow-glow-secondary'
-            : 'bg-studio-600 hover:bg-studio-500'
+            ? 'bg-accent-secondary text-white shadow-glow-secondary animate-glow-pulse shadow-inner-glow'
+            : 'bg-studio-700 text-red-400/70 shadow-hardware-btn hover:bg-studio-600 hover:text-red-400'
         } ${!audioReady ? 'opacity-50 cursor-not-allowed' : ''}`}
         title={isRecording ? 'Stop recording' : 'Record'}
       >
         <Circle
-          size={14}
+          size={16}
           fill={isRecording ? 'currentColor' : 'none'}
-          className={isRecording ? 'text-white' : 'text-red-400'}
+          strokeWidth={3}
         />
       </button>
 

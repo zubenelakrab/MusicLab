@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Grid3X3, Music, Layers, Sliders } from 'lucide-react';
+import { Sparkles, Grid3X3, Music, Layers, Sliders, Info } from 'lucide-react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
 import CodeEditor from './components/Editor/CodeEditor';
@@ -13,6 +13,7 @@ import MelodicSequencer from './components/MelodicSequencer/MelodicSequencer';
 import SampleBrowser from './components/SampleBrowser/SampleBrowser';
 import EffectsRack from './components/EffectsRack/EffectsRack';
 import ErrorBoundary from './components/ErrorBoundary';
+import AboutCrackerModal from './components/About/AboutCrackerModal';
 import { useStore } from './store';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePersistence } from './hooks/usePersistence';
@@ -24,6 +25,7 @@ export default function App() {
   const [showMelodic, setShowMelodic] = useState(false);
   const [showSamples, setShowSamples] = useState(false);
   const [showEffects, setShowEffects] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useKeyboardShortcuts();
   usePersistence();
@@ -41,43 +43,51 @@ export default function App() {
           <div className="border-l border-studio-600 pl-4 flex items-center gap-2">
             <button
               onClick={() => setShowSequencer(true)}
-              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-400 hover:to-blue-500 flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5"
               title="Step Sequencer (Drums)"
             >
-              <Grid3X3 size={14} />
+              <Grid3X3 size={14} className="text-blue-400" />
               <span>Drums</span>
             </button>
             <button
               onClick={() => setShowMelodic(true)}
-              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-400 hover:to-orange-500 flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5"
               title="Melodic Sequencer"
             >
-              <Music size={14} />
+              <Music size={14} className="text-orange-400" />
               <span>Melodic</span>
             </button>
             <button
               onClick={() => setShowSamples(true)}
-              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-teal-500 to-teal-600 text-white rounded-lg hover:from-teal-400 hover:to-teal-500 flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5"
               title="Sample Browser"
             >
-              <Layers size={14} />
+              <Layers size={14} className="text-teal-400" />
               <span>Samples</span>
             </button>
             <button
               onClick={() => setShowEffects(true)}
-              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-cyan-500 to-cyan-600 text-white rounded-lg hover:from-cyan-400 hover:to-cyan-500 flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5"
               title="Effects Rack"
             >
-              <Sliders size={14} />
+              <Sliders size={14} className="text-cyan-400" />
               <span>Effects</span>
             </button>
             <button
               onClick={() => setShowVisualizer(true)}
-              className="btn-pro px-3 py-1.5 text-xs bg-gradient-to-b from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-400 hover:to-purple-500 flex items-center gap-1.5"
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5"
               title="Open Visualizer"
             >
-              <Sparkles size={14} />
+              <Sparkles size={14} className="text-purple-400" />
               <span>Visualizer</span>
+            </button>
+            <button
+              onClick={() => setShowAbout(true)}
+              className="btn-pro px-3 py-1.5 text-xs bg-studio-800 text-gray-300 rounded-lg hover:bg-studio-700 hover:text-white flex items-center gap-1.5 ml-2 border border-studio-600"
+              title="About MusicLab"
+            >
+              <Info size={14} className="text-[#00ffcc]" />
+              <span className="font-mono text-[10px] tracking-widest text-[#00ffcc]">NFO</span>
             </button>
           </div>
         </div>
@@ -87,6 +97,9 @@ export default function App() {
       </header>
 
       {/* Modals */}
+      <ErrorBoundary name="About">
+        <AboutCrackerModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+      </ErrorBoundary>
       <ErrorBoundary name="Visualizer">
         <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
       </ErrorBoundary>

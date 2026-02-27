@@ -106,14 +106,14 @@ export default function CodeEditor() {
           },
           '.cm-line': { padding: '0 8px' },
           '.cm-tooltip.cm-tooltip-autocomplete': {
-            backgroundColor: '#1a1a1a',
-            border: '1px solid #3a3a3a',
+            backgroundColor: '#1c1c21',
+            border: '1px solid #3b3b45',
           },
           '.cm-tooltip-autocomplete ul li': {
             padding: '4px 8px',
           },
           '.cm-tooltip-autocomplete ul li[aria-selected]': {
-            backgroundColor: '#00d4aa',
+            backgroundColor: '#00e5a3',
             color: 'black',
           },
         }),
@@ -150,31 +150,31 @@ export default function CodeEditor() {
   }, [currentCode, editingClip?.clipId, hasClip]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-studio-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-studio-700 border-b border-studio-600">
+      <div className="flex items-center justify-between px-3 py-2 bg-studio-800 border-b border-studio-700 shadow-sm z-10">
         {hasClip ? (
           <div className="flex items-center gap-2">
             <div
-              className="w-3 h-3 rounded"
+              className="w-3 h-3 rounded shadow-inner-glow"
               style={{ backgroundColor: currentClipData.track.color }}
             />
-            <span className="text-sm text-gray-400">
-              <span className="text-white">{currentClipData.track.name}</span>
-              <span className="mx-1">/</span>
+            <span className="text-sm font-medium text-gray-400">
+              <span className="text-gray-200">{currentClipData.track.name}</span>
+              <span className="mx-2 text-studio-600">/</span>
               <span className="text-accent-primary">{currentClipData.clip.name}</span>
             </span>
           </div>
         ) : (
-          <span className="text-sm text-gray-400">Editor</span>
+          <span className="text-sm font-medium text-gray-400">Editor</span>
         )}
-        <span className="text-xs text-gray-500">
-          {isPlaying ? 'Live' : 'Tab to autocomplete'}
+        <span className="text-xs text-studio-500 font-mono">
+          {isPlaying ? 'LIVE' : 'TAB TO AUTOCOMPLETE'}
         </span>
       </div>
 
       {/* Editor container - always mounted */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative panel-inset m-2 rounded-lg">
         <div
           ref={editorRef}
           className="absolute inset-0"
@@ -183,10 +183,10 @@ export default function CodeEditor() {
 
         {/* Placeholder when no clip selected */}
         {!hasClip && (
-          <div className="absolute inset-0 flex items-center justify-center bg-studio-900">
-            <div className="text-center text-gray-500">
-              <p className="text-sm">Select a clip to edit</p>
-              <p className="text-xs mt-1">Click on a clip in the timeline</p>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-studio-500">
+              <p className="text-sm font-medium">Select a clip to edit</p>
+              <p className="text-xs mt-1 opacity-70">Click on a clip in the timeline</p>
             </div>
           </div>
         )}
