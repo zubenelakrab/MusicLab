@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { useStore } from '../store';
-import * as engine from '../strudel/engine';
-import logger from '../utils/logger';
+import { useStore } from '../store/index.js';
+import * as engine from '../strudel/engine.js';
+import logger from '../utils/logger.js';
+import {
+  arrangementHasPlayableClips,
+  getPlaybackStartBar,
+} from './strudelPlaybackUtils.js';
 
 export function useStrudel() {
   const [audioReady, setAudioReady] = useState(false);
@@ -34,23 +38,14 @@ export function useStrudel() {
 
   // Check if arrangement has any clips with code
   const hasClipsToPlay = useCallback(() => {
-    const hasSolo = arrangement.tracks.some(t => t.solo);
+    return arrangementHasPlayableClips(arrangement, patterns);
+  }, [arrangement, patterns]);
 
-    for (const track of arrangement.tracks) {
-      if (track.muted) continue;
-      if (hasSolo && !track.solo) continue;
-
-      for (const clip of track.clips) {
-        if (clip.layers && clip.layers.length > 0) {
-          const clipCode = clip.layers[0]?.code;
-          if (clipCode && clipCode.trim()) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }, [arrangement]);
+  const stopPlaybackState = useCallback((playheadPosition = 0) => {
+    engine.stop();
+    setPlaying(false);
+    setPlayheadPosition(playheadPosition);
+  }, [setPlaying, setPlayheadPosition]);
 
   const play = useCallback(async () => {
     setError(null);
@@ -69,8 +64,8 @@ export function useStrudel() {
       return;
     }
 
-    // Reset playhead to start
-    setPlayheadPosition(0);
+    // Reset playhead to the effective playback start
+    setPlayheadPosition(getPlaybackStartBar(arrangement));
 
     // Use arrangement-aware evaluation with time masking
     const result = await engine.evaluateArrangement(arrangement, patterns, bpm);
@@ -84,11 +79,8 @@ export function useStrudel() {
   }, [audioReady, initializeAudio, hasClipsToPlay, arrangement, patterns, bpm, setPlaying, setPlayheadPosition]);
 
   const stop = useCallback(() => {
-    engine.stop();
-    setPlaying(false);
-    // Reset playhead when stopping
-    setPlayheadPosition(0);
-  }, [setPlaying, setPlayheadPosition]);
+    stopPlaybackState(0);
+  }, [stopPlaybackState]);
 
   const toggle = useCallback(() => {
     if (isPlaying) {
@@ -100,15 +92,21 @@ export function useStrudel() {
 
   // Legacy: update code (for compatibility)
   const updateCode = useCallback(async () => {
-    if (isPlaying && hasClipsToPlay()) {
-      const result = await engine.evaluateArrangement(arrangement, patterns, bpm);
-      if (!result.success) {
-        setError(result.error);
-      } else {
-        setError(null);
-      }
+    if (!isPlaying) return;
+
+    if (!hasClipsToPlay()) {
+      stopPlaybackState(getPlaybackStartBar(arrangement));
+      setError('No clips to play. Add clips to tracks.');
+      return;
     }
-  }, [isPlaying, bpm, arrangement, patterns, hasClipsToPlay]);
+
+    const result = await engine.evaluateArrangement(arrangement, patterns, bpm);
+    if (!result.success) {
+      setError(result.error);
+    } else {
+      setError(null);
+    }
+  }, [isPlaying, bpm, arrangement, patterns, hasClipsToPlay, stopPlaybackState]);
 
   // Sync tempo changes
   useEffect(() => {
@@ -120,28 +118,38 @@ export function useStrudel() {
   // Track loop state for detecting changes
   const lastLoopEnabledRef = useRef(arrangement.loopEnabled);
 
-  // Handle loop toggle - restart playback from 0
+  useEffect(() => {
+    if (!isPlaying) {
+      lastLoopEnabledRef.current = arrangement.loopEnabled;
+      lastVersionRef.current = _arrangementVersion;
+    }
+  }, [isPlaying, arrangement.loopEnabled, _arrangementVersion]);
+
+  // Handle loop toggle while playing by restarting from the effective start.
   useEffect(() => {
     if (audioReady && isPlaying && arrangement.loopEnabled !== lastLoopEnabledRef.current) {
       lastLoopEnabledRef.current = arrangement.loopEnabled;
+      const playbackStart = getPlaybackStartBar(arrangement);
 
       // Stop, reset, and restart playback
-      engine.stop();
+      stopPlaybackState(playbackStart);
       engine.resetPlaybackTime();
-      setPlayheadPosition(0);
 
       if (hasClipsToPlay()) {
         engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
           if (result.success) {
             engine.start();
+            setPlaying(true);
             setError(null);
           } else {
             setError(result.error);
           }
         });
+      } else {
+        setError('No clips to play. Add clips to tracks.');
       }
     }
-  }, [arrangement.loopEnabled, audioReady, isPlaying, arrangement, patterns, bpm, hasClipsToPlay, setPlayheadPosition]);
+  }, [arrangement.loopEnabled, audioReady, isPlaying, arrangement, patterns, bpm, hasClipsToPlay, stopPlaybackState, setPlaying]);
 
   // Sync other arrangement changes in real-time (excluding loop toggle)
   useEffect(() => {
@@ -150,19 +158,23 @@ export function useStrudel() {
       if (arrangement.loopEnabled === lastLoopEnabledRef.current) {
         lastVersionRef.current = _arrangementVersion;
 
-        if (hasClipsToPlay()) {
-          engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
-            if (!result.success) {
-              setError(result.error);
-            } else {
-              setError(null);
-            }
-          });
+        if (!hasClipsToPlay()) {
+          stopPlaybackState(getPlaybackStartBar(arrangement));
+          setError('No clips to play. Add clips to tracks.');
+          return;
         }
+
+        engine.evaluateArrangement(arrangement, patterns, bpm).then(result => {
+          if (!result.success) {
+            setError(result.error);
+          } else {
+            setError(null);
+          }
+        });
       }
       lastVersionRef.current = _arrangementVersion;
     }
-  }, [_arrangementVersion, arrangement, patterns, audioReady, isPlaying, bpm, hasClipsToPlay]);
+  }, [_arrangementVersion, arrangement, patterns, audioReady, isPlaying, bpm, hasClipsToPlay, stopPlaybackState]);
 
   // Cleanup on unmount
   useEffect(() => {

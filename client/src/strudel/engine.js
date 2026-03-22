@@ -1,6 +1,6 @@
 import { initAudioOnFirstClick, getAudioContext, webaudioRepl, samples } from '@strudel/webaudio';
 import { mini } from '@strudel/mini';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 let repl = null;
 let audioInitialized = false;
@@ -504,6 +504,8 @@ export async function startPreview(code, bpm = 120, swing = 0) {
 
     const cps = bpm / 60 / 4;
     const { scheduler } = repl;
+    scheduler.stop();
+    playbackStartTime = 0;
     scheduler.setCps(cps);
 
     // Create preview pattern (handles .gain() from step sequencer)
@@ -545,6 +547,8 @@ export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120
 
     const cps = bpm / 60 / 4;
     const { scheduler } = repl;
+    scheduler.stop();
+    playbackStartTime = 0;
     scheduler.setCps(cps);
 
     // Create melodic pattern: note("c3 e3").s("arpy")
@@ -577,6 +581,7 @@ export function stopPreview() {
   try {
     const { scheduler } = repl;
     scheduler.stop();
+    playbackStartTime = 0;
 
     // Restore previous layers if they existed
     if (savedLayers && savedLayers.length > 0) {
