@@ -62,9 +62,9 @@ A powerful web-based music production environment built on [Strudel](https://str
 - Save your own patterns
 
 ### Project Management
-- Save and load full arrangements with tracks
-- Export/import projects as JSON (v2.0 format)
-- Backwards compatible with legacy layer format
+- Save and load full arrangements with tracks, loop ranges, groove, and automation
+- Export/import projects as JSON using the canonical v2.x project schema
+- Backwards compatible with legacy layer format and older stored projects
 
 ## Installation
 
@@ -184,6 +184,15 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Lint source code
+npm run lint
+
+# Run automated tests
+npm test
+
+# Full local verification
+npm run verify
 ```
 
 ### Server API Endpoints
@@ -191,8 +200,17 @@ npm run preview
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/health` | GET | Health check |
-| `/api/patterns` | GET/POST | Pattern library CRUD |
-| `/api/projects` | GET/POST | Project storage |
+| `/api/patterns` | GET/POST | List and create patterns |
+| `/api/patterns/:id` | GET/PUT/DELETE | Read, update, and delete patterns |
+| `/api/projects` | GET/POST | List and create canonical project documents |
+| `/api/projects/:id` | GET/PUT/DELETE | Read, update, and delete projects |
+
+### Quality Gates
+
+- `npm run lint` checks the repo with ESLint
+- `npm test` runs the Node-based regression suite for project schema and store behavior
+- `npm run verify` runs lint, tests, and production build in one command
+- GitHub Actions CI mirrors the same verification flow on push and pull request
 
 ## Browser Support
 
@@ -206,6 +224,14 @@ MusicLab requires a modern browser with Web Audio API support:
 MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) collection from TidalCycles, providing 296+ high-quality samples across 19 categories including a curated Retro/Arcade collection.
 
 ## Changelog
+
+### v2.1.0 (2026-03-22)
+- **Project persistence overhaul**: unified the canonical project schema across client export/import, autosave, and server API; groove, automation, loop metadata, and legacy projects now round-trip correctly.
+- **Safer loading flows**: opening/importing projects now validates data earlier, prompts before destructive replacement, and resets arrangement view/playhead state when switching projects.
+- **Arrangement interaction fixes**: corrected clip placement and drag behavior when the timeline is horizontally scrolled, and routed "Add as Track" through store actions so undo/autosave stay in sync.
+- **Playback sync fixes**: transport now stops cleanly if the arrangement becomes empty during playback, starts the playhead from `loopStart` when looping, and preview sessions take over the scheduler without leaking stale transport state.
+- **Frontend performance**: lazy-loaded heavy panels such as Visualizer, sequencers, sample browser, effects, and About modal; added chunk splitting to reduce the initial bundle cost.
+- **Quality tooling**: added ESLint, automated tests, `npm run verify`, and CI coverage for project schema, persistence, and store/playback regression checks.
 
 ### v2.0.2 (2026-02-27)
 - **Pro Tactile UI**: Complete visual overhaul replacing flat glows with a deeper "slate" theme, inset panels, and hardware-style tactile buttons for a more professional DAW experience.
