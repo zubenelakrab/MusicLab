@@ -1,31 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Search, Play, ChevronRight, Volume2, Grid, List, Layers } from 'lucide-react';
 import { useStore } from '../../store';
-import { SAMPLES_BY_CATEGORY, SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS, ALL_SAMPLE_NAMES, CATEGORY_ICONS } from '../../data/samples';
+import { SAMPLES_BY_CATEGORY, SAMPLE_VARIANT_COUNTS, ALL_SAMPLE_NAMES, CATEGORY_ICONS } from '../../data/samples';
 import { previewSample } from '../../strudel/engine';
-
-// Category icons (using colored dots)
-const CATEGORY_COLORS = {
-  'Kicks': 'bg-red-500',
-  'Snares': 'bg-orange-500',
-  'Hi-Hats': 'bg-yellow-500',
-  'Toms/Cymbals': 'bg-amber-500',
-  '808': 'bg-pink-500',
-  '909': 'bg-rose-500',
-  'Drums': 'bg-purple-500',
-  'Percussion': 'bg-violet-500',
-  'Bass': 'bg-blue-500',
-  'Synth': 'bg-cyan-500',
-  'FX': 'bg-teal-500',
-  'Breaks': 'bg-green-500',
-  'Rave': 'bg-lime-500',
-  'Vocals': 'bg-emerald-500',
-  'World': 'bg-indigo-500',
-  'Nature': 'bg-sky-500',
-  'Materials': 'bg-slate-500',
-  'Misc': 'bg-gray-500',
-  'Retro/Arcade': 'bg-fuchsia-500',
-};
 
 export default function SampleBrowser({ isOpen, onClose }) {
   const { currentPattern, selectedLayerIndex, updateLayerCode } = useStore();

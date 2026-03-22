@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import * as store from '../db/store.js';
+import {
+  hydrateStoredProject,
+  toCanonicalProject,
+  validateProjectPayload,
+} from '../lib/projectPayload.js';
 
 const router = Router();
 const COLLECTION = 'projects';
@@ -13,7 +18,7 @@ function handleStoreError(res, err) {
 router.get('/', async (req, res) => {
   try {
     const projects = await store.getAll(COLLECTION);
-    res.json(projects);
+    res.json(projects.map(hydrateStoredProject));
   } catch (err) {
     return handleStoreError(res, err);
   }
@@ -25,33 +30,23 @@ router.get('/:id', async (req, res) => {
     if (!project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    res.json(project);
+    res.json(hydrateStoredProject(project));
   } catch (err) {
     return handleStoreError(res, err);
   }
 });
 
 router.post('/', async (req, res) => {
-  const { name, bpm, tracks } = req.body;
-
-  // Validate input
-  if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
-    return res.status(400).json({ error: 'name must be a string (max 200 chars)' });
-  }
-  if (bpm !== undefined && (typeof bpm !== 'number' || bpm < 20 || bpm > 400)) {
-    return res.status(400).json({ error: 'bpm must be a number between 20 and 400' });
-  }
-  if (tracks !== undefined && !Array.isArray(tracks)) {
-    return res.status(400).json({ error: 'tracks must be an array' });
+  const validation = validateProjectPayload(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.errors[0] });
   }
 
-  const project = {
+  const project = toCanonicalProject(req.body, {
     id: uuidv4(),
-    name: name || 'Untitled Project',
-    bpm: bpm || 120,
-    tracks: tracks || [],
-    createdAt: Date.now()
-  };
+    createdAt: Date.now(),
+  });
+
   try {
     await store.create(COLLECTION, project);
     res.status(201).json(project);
@@ -62,21 +57,29 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   const body = req.body;
+  const validation = validateProjectPayload(body, { partial: true });
 
-  // Validate body is an object
-  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    return res.status(400).json({ error: 'Request body must be an object' });
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.errors[0] });
   }
+
   // Cannot change id
   if (body.id !== undefined && body.id !== req.params.id) {
     return res.status(400).json({ error: 'Cannot change id' });
   }
 
   try {
-    const updated = await store.update(COLLECTION, req.params.id, body);
-    if (!updated) {
+    const existing = await store.getById(COLLECTION, req.params.id);
+    if (!existing) {
       return res.status(404).json({ error: 'Project not found' });
     }
+
+    const updated = await store.update(
+      COLLECTION,
+      req.params.id,
+      toCanonicalProject(body, existing)
+    );
+
     res.json(updated);
   } catch (err) {
     return handleStoreError(res, err);

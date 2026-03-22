@@ -372,8 +372,6 @@ export default function SamplePad() {
     : null;
 
   const categories = Object.entries(SAMPLES_BY_CATEGORY);
-  const totalSamples = SAMPLE_NAMES.length;
-
   return (
     <div className="flex flex-col h-full overflow-hidden bg-studio-900 border-l border-studio-700">
       <div className="px-3 py-2 pro-header">

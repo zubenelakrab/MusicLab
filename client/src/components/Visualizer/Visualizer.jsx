@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Monitor, Zap, RefreshCw, ChevronDown } from 'lucide-react';
+import { X, Monitor, Zap, ChevronDown } from 'lucide-react';
 import { getAnalyser } from '../../strudel/engine';
 
 const MODE_CATEGORIES = {
@@ -120,8 +120,6 @@ export default function Visualizer({ isOpen, onClose }) {
   const tunnelRef = useRef({ rings: [], rotation: 0 });
   const nebulaRef = useRef({ blobs: [], time: 0 });
   const peaksRef = useRef([]);
-  const milkdropRef = useRef({ time: 0, warpBuffer: null });
-  const lissajousRef = useRef({ points: [], trail: [] });
   const attractorRef = useRef({ x: 0.1, y: 0.1, points: [] });
   const spiroRef = useRef({ angle: 0, points: [] });
 
@@ -278,8 +276,6 @@ export default function Visualizer({ isOpen, onClose }) {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       const bass = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10 / 255;
       const mid = dataArray.slice(10, 80).reduce((a, b) => a + b, 0) / 70 / 255;
-      const high = dataArray.slice(80, 150).reduce((a, b) => a + b, 0) / 70 / 255;
-
       const bassHit = bass > 0.4 && bass - s.prevBass > 0.08;
       s.prevBass = bass;
       if (bassHit) {
@@ -1680,7 +1676,6 @@ export default function Visualizer({ isOpen, onClose }) {
       ctx.strokeStyle = palette.colors[0] + '20'; ctx.lineWidth = 1;
       for (let i = 1; i <= 4; i++) { ctx.beginPath(); ctx.arc(cx, cy, r * i / 4, 0, Math.PI * 2); ctx.stroke(); }
       // Sweep
-      const sg = ctx.createConicalGradient ? null : ctx.createLinearGradient(cx, cy, cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
       ctx.save(); ctx.globalAlpha = 0.4;
       ctx.beginPath(); ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, angle - 0.4, angle); ctx.closePath();
@@ -1723,7 +1718,6 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawCityscape = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass } = getAudioLevels();
       ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const buildings = 50; const bw = canvas.width / buildings;
       for (let i = 0; i < buildings; i++) {
@@ -1891,7 +1885,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawConstellation = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid, high } = getAudioLevels();
+      const { bass, mid } = getAudioLevels();
       ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const W = canvas.width, H = canvas.height;
       if (!extraRef.current.stars2 || extraRef.current.stars2._w !== W) {
@@ -1946,7 +1940,7 @@ export default function Visualizer({ isOpen, onClose }) {
       }
       const t = time * 0.001;
       ctx.globalCompositeOperation = 'lighter';
-      extraRef.current.flies.forEach((f, i) => {
+      extraRef.current.flies.forEach((f) => {
         f.x += Math.sin(t * 0.7 + f.phase) * f.speed * (1.5 + mid * 4);
         f.y += Math.cos(t * 0.5 + f.phase * 1.3) * f.speed * (1.5 + mid * 4);
         if (f.x < -20) f.x = W + 20; if (f.x > W + 20) f.x = -20;
@@ -2006,7 +2000,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawConfetti = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid, high } = getAudioLevels();
+      const { bass, mid } = getAudioLevels();
       const W = canvas.width, H = canvas.height;
       ctx.fillStyle = 'rgba(0,0,0,0.03)'; ctx.fillRect(0, 0, W, H);
       if (!extraRef.current.confetti) extraRef.current.confetti = [];
@@ -2039,7 +2033,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawEmbers = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid, high } = getAudioLevels();
+      const { bass, mid } = getAudioLevels();
       const W = canvas.width, H = canvas.height;
       ctx.fillStyle = 'rgba(0,0,0,0.03)'; ctx.fillRect(0, 0, W, H);
       if (!extraRef.current.embers) extraRef.current.embers = [];
@@ -2077,7 +2071,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawPhyllotaxis = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid } = getAudioLevels();
+      const { bass } = getAudioLevels();
       ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const cx = canvas.width / 2, cy = canvas.height / 2;
       const golden = 137.508 * Math.PI / 180;
@@ -2160,7 +2154,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawSacredGeo = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid } = getAudioLevels();
+      const { bass } = getAudioLevels();
       ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const cx = canvas.width / 2, cy = canvas.height / 2;
       const baseR = 40 + bass * 20; const t = time * 0.001;
@@ -2238,7 +2232,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawAurora = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid, high } = getAudioLevels();
+      const { bass, mid } = getAudioLevels();
       ctx.fillStyle = palette.bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const t = time * 0.001;
       const curtains = 5;
@@ -2378,7 +2372,7 @@ export default function Visualizer({ isOpen, onClose }) {
     const drawFlame = (time) => {
       if (analyser) analyser.getByteFrequencyData(dataArray);
       let sum = dataArray.reduce((a, b) => a + b, 0); if (sum < 100) simulateAudio(time);
-      const { bass, mid } = getAudioLevels();
+      const { bass } = getAudioLevels();
       const scale = 4; const fw = Math.ceil(canvas.width / scale); const fh = Math.ceil(canvas.height / scale);
       if (!extraRef.current.fireGrid || extraRef.current.fireGrid.length !== fw * fh) extraRef.current.fireGrid = new Uint8Array(fw * fh);
       const grid = extraRef.current.fireGrid;

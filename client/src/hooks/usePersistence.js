@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store';
+import { createProjectDocument } from '../project/projectFormat';
 
 const AUTOSAVE_KEY = 'musiclab_autosave';
 const DEBOUNCE_MS = 2000;
 
 export function usePersistence() {
-  const arrangement = useStore((state) => state.arrangement);
   const bpm = useStore((state) => state.bpm);
   const _arrangementVersion = useStore((state) => state._arrangementVersion);
   const timerRef = useRef(null);
@@ -60,19 +60,9 @@ export function usePersistence() {
   const saveProjectToServer = useCallback(async () => {
     const state = useStore.getState();
     const { arrangement } = state;
-
-    const body = {
-      name: arrangement.name || 'Untitled',
-      bpm: state.bpm,
-      tracks: arrangement.tracks,
-      arrangement: {
-        lengthBars: arrangement.lengthBars,
-        loopEnabled: arrangement.loopEnabled,
-        loopStart: arrangement.loopStart,
-        loopEnd: arrangement.loopEnd,
-        groove: arrangement.groove,
-      },
-    };
+    const body = createProjectDocument(arrangement, state.bpm, {
+      includeId: Boolean(arrangement.id),
+    });
 
     try {
       if (arrangement.id) {

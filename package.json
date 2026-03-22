@@ -33,13 +33,18 @@
     "dev:server": "node server/index.js",
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspace=client",
-    "preview": "npm run preview --workspace=client"
+    "preview": "npm run preview --workspace=client",
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint .",
+    "verify": "npm run lint && npm run test && npm run build"
   },
   "workspaces": [
     "client"
   ],
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0"
   },
   "engines": {
     "node": ">=18.0.0"

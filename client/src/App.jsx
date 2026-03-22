@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Sparkles, Grid3X3, Music, Layers, Sliders, Info } from 'lucide-react';
 import Controls from './components/Transport/Controls';
 import FileManager from './components/FileManager/FileManager';
@@ -7,16 +7,27 @@ import SamplePad from './components/Editor/SamplePad';
 import CheatSheet from './components/Editor/CheatSheet';
 import PatternList from './components/PatternManager/PatternList';
 import { ArrangementView } from './components/ArrangementView';
-import Visualizer from './components/Visualizer/Visualizer';
-import StepSequencer from './components/StepSequencer/StepSequencer';
-import MelodicSequencer from './components/MelodicSequencer/MelodicSequencer';
-import SampleBrowser from './components/SampleBrowser/SampleBrowser';
-import EffectsRack from './components/EffectsRack/EffectsRack';
 import ErrorBoundary from './components/ErrorBoundary';
-import AboutCrackerModal from './components/About/AboutCrackerModal';
 import { useStore } from './store';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { usePersistence } from './hooks/usePersistence';
+
+const Visualizer = lazy(() => import('./components/Visualizer/Visualizer'));
+const StepSequencer = lazy(() => import('./components/StepSequencer/StepSequencer'));
+const MelodicSequencer = lazy(() => import('./components/MelodicSequencer/MelodicSequencer'));
+const SampleBrowser = lazy(() => import('./components/SampleBrowser/SampleBrowser'));
+const EffectsRack = lazy(() => import('./components/EffectsRack/EffectsRack'));
+const AboutCrackerModal = lazy(() => import('./components/About/AboutCrackerModal'));
+
+function ModalFallback() {
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-studio-950/70 backdrop-blur-sm">
+      <div className="rounded-xl border border-studio-600 bg-studio-900 px-4 py-3 text-sm text-gray-300 shadow-panel">
+        Loading module...
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const { currentPattern } = useStore();
@@ -98,22 +109,46 @@ export default function App() {
 
       {/* Modals */}
       <ErrorBoundary name="About">
-        <AboutCrackerModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+        {showAbout ? (
+          <Suspense fallback={<ModalFallback />}>
+            <AboutCrackerModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
       <ErrorBoundary name="Visualizer">
-        <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
+        {showVisualizer ? (
+          <Suspense fallback={<ModalFallback />}>
+            <Visualizer isOpen={showVisualizer} onClose={() => setShowVisualizer(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
       <ErrorBoundary name="Step Sequencer">
-        <StepSequencer isOpen={showSequencer} onClose={() => setShowSequencer(false)} />
+        {showSequencer ? (
+          <Suspense fallback={<ModalFallback />}>
+            <StepSequencer isOpen={showSequencer} onClose={() => setShowSequencer(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
       <ErrorBoundary name="Melodic Sequencer">
-        <MelodicSequencer isOpen={showMelodic} onClose={() => setShowMelodic(false)} />
+        {showMelodic ? (
+          <Suspense fallback={<ModalFallback />}>
+            <MelodicSequencer isOpen={showMelodic} onClose={() => setShowMelodic(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
       <ErrorBoundary name="Sample Browser">
-        <SampleBrowser isOpen={showSamples} onClose={() => setShowSamples(false)} />
+        {showSamples ? (
+          <Suspense fallback={<ModalFallback />}>
+            <SampleBrowser isOpen={showSamples} onClose={() => setShowSamples(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
       <ErrorBoundary name="Effects Rack">
-        <EffectsRack isOpen={showEffects} onClose={() => setShowEffects(false)} />
+        {showEffects ? (
+          <Suspense fallback={<ModalFallback />}>
+            <EffectsRack isOpen={showEffects} onClose={() => setShowEffects(false)} />
+          </Suspense>
+        ) : null}
       </ErrorBoundary>
 
       <div className="flex-1 flex overflow-hidden">

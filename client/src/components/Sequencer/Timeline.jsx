@@ -31,7 +31,6 @@ export default function Timeline() {
 
   const { isPlaying } = useStrudel();
   const [showEffects, setShowEffects] = useState(false);
-  const [effectsLayerIndex, setEffectsLayerIndex] = useState(null);
 
   const layers = currentPattern.layers || [];
   const selectedLayer = layers[selectedLayerIndex];
@@ -48,7 +47,6 @@ export default function Timeline() {
   // Open effects rack for a specific layer
   const openEffectsForLayer = (index) => {
     selectLayer(index);
-    setEffectsLayerIndex(index);
     setShowEffects(true);
   };
 

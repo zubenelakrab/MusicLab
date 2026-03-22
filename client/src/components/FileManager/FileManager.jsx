@@ -2,8 +2,12 @@ import { useRef } from 'react';
 import { FilePlus, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../../store';
 import logger from '../../utils/logger';
-import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 import { clearAutosave } from '../../hooks/usePersistence';
+import {
+  convertLegacyLayerProject,
+  createProjectDocument,
+  isVersion2Project,
+} from '../../project/projectFormat';
 
 export default function FileManager() {
   const fileInputRef = useRef(null);
@@ -15,36 +19,7 @@ export default function FileManager() {
 
   // Export current composition as JSON (with arrangement tracks)
   const handleExport = () => {
-    const composition = {
-      version: '2.0',
-      name: arrangement.name || 'Untitled',
-      bpm: bpm,
-      arrangement: {
-        lengthBars: arrangement.lengthBars,
-        loopEnabled: arrangement.loopEnabled,
-        loopStart: arrangement.loopStart,
-        loopEnd: arrangement.loopEnd,
-        tracks: arrangement.tracks.map(track => ({
-          id: track.id,
-          name: track.name,
-          color: track.color,
-          muted: track.muted,
-          solo: track.solo,
-          height: track.height,
-          params: track.params,
-          clips: track.clips.map(clip => ({
-            id: clip.id,
-            patternId: clip.patternId,
-            name: clip.name,
-            startBar: clip.startBar,
-            durationBars: clip.durationBars,
-            color: clip.color,
-            layers: clip.layers,
-          })),
-        })),
-      },
-      exportedAt: new Date().toISOString(),
-    };
+    const composition = createProjectDocument(arrangement, bpm, { exportedAt: true });
 
     const json = JSON.stringify(composition, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -76,7 +51,7 @@ export default function FileManager() {
         }
 
         // Version 2.0 format with arrangement tracks
-        if (composition.version === '2.0' && composition.arrangement) {
+        if (isVersion2Project(composition.version) && composition.arrangement) {
           useStore.getState().loadProject(composition);
           alert(`Project "${composition.name}" imported with ${composition.arrangement.tracks.length} tracks`);
           return;
@@ -84,38 +59,9 @@ export default function FileManager() {
 
         // Legacy version 1.0 format with layers - convert to tracks
         if (composition.layers && Array.isArray(composition.layers)) {
-          const tracks = composition.layers.map((layer, index) => ({
-            id: generateTrackId(),
-            name: layer.name || `Track ${index + 1}`,
-            color: ['#00d4aa', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5],
-            muted: layer.muted || false,
-            solo: layer.solo || false,
-            height: 100,
-            params: layer.params || { gain: 0.8, pan: 0, cutoff: 8000, resonance: 0, speed: 1 },
-            clips: [{
-              id: generateClipId(),
-              patternId: null,
-              name: layer.name || `Clip ${index + 1}`,
-              startBar: 0,
-              durationBars: 4,
-              color: ['#00d4aa', '#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6'][index % 5],
-              layers: [{
-                id: generateId(),
-                name: layer.name || 'Layer 1',
-                code: layer.code || '',
-                muted: false,
-                solo: false,
-                params: layer.params || { gain: 0.8, pan: 0, cutoff: 8000, resonance: 0, speed: 1 },
-              }],
-            }],
-          }));
-
-          useStore.getState().loadProject({
-            name: composition.name,
-            bpm: composition.bpm,
-            tracks: tracks
-          });
-          alert(`Legacy composition "${composition.name}" imported as ${tracks.length} tracks`);
+          const project = convertLegacyLayerProject(composition);
+          useStore.getState().loadProject(project);
+          alert(`Legacy composition "${composition.name}" imported as ${project.arrangement.tracks.length} tracks`);
           return;
         }
 
