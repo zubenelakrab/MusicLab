@@ -2,7 +2,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Copy, Trash2 } from 'lucide-react';
 import { useStore } from '../../store';
 
-export default function Clip({ clip, track, pixelsPerBar, gridSubdivision }) {
+export default function Clip({
+  clip,
+  track,
+  pixelsPerBar,
+  gridSubdivision,
+  scrollContainerRef,
+  trackControlsWidth,
+}) {
   const {
     arrangementView,
     editingClip,
@@ -64,8 +71,12 @@ export default function Clip({ clip, track, pixelsPerBar, gridSubdivision }) {
 
     const handleMouseMove = (e) => {
       if (isDragging) {
-        const parentRect = clipRef.current.parentElement.getBoundingClientRect();
-        const newX = e.clientX - parentRect.left - dragOffset;
+        const scrollContainer = scrollContainerRef?.current;
+        const containerRect = scrollContainer?.getBoundingClientRect();
+        const currentScrollX = scrollContainer?.scrollLeft ?? arrangementView.scrollX;
+        const newX = containerRect
+          ? e.clientX - containerRect.left - trackControlsWidth + currentScrollX - dragOffset
+          : e.clientX - clipRef.current.parentElement.getBoundingClientRect().left - dragOffset;
         const newBar = newX / pixelsPerBar;
         moveClip(track.id, clip.id, newBar);
       }
@@ -90,7 +101,22 @@ export default function Clip({ clip, track, pixelsPerBar, gridSubdivision }) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, initialWidth, initialX, clip.id, track.id, pixelsPerBar, gridSubdivision, moveClip, resizeClip]);
+  }, [
+    isDragging,
+    isResizing,
+    dragOffset,
+    initialWidth,
+    initialX,
+    clip.id,
+    track.id,
+    pixelsPerBar,
+    gridSubdivision,
+    moveClip,
+    resizeClip,
+    scrollContainerRef,
+    trackControlsWidth,
+    arrangementView.scrollX,
+  ]);
 
   const handleDuplicate = (e) => {
     e.stopPropagation();

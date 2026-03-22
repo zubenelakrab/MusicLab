@@ -5,15 +5,8 @@ import PatternCard from './PatternCard';
 import PatternForm from './PatternForm';
 import { PRESETS_BY_CATEGORY, PRESET_CATEGORIES, ALL_PRESETS } from '../../data/presets';
 import logger from '../../utils/logger';
-import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 
 const API_URL = '/api/patterns';
-
-// Default track colors
-const TRACK_COLORS = [
-  '#00d4aa', '#ff6b6b', '#4ecdc4', '#f7dc6f', '#bb8fce',
-  '#85c1e9', '#f8b500', '#e74c3c', '#2ecc71', '#9b59b6',
-];
 
 export default function PatternList() {
   const {
@@ -22,7 +15,7 @@ export default function PatternList() {
     currentPattern,
     addPattern,
     arrangement,
-    setEditingClip,
+    addPatternAsTrack,
   } = useStore();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,69 +83,7 @@ export default function PatternList() {
 
   // Add pattern as a new track with a clip
   const handleAddAsTrack = (pattern) => {
-    const trackCount = arrangement.tracks.length;
-    const color = TRACK_COLORS[trackCount % TRACK_COLORS.length];
-    const trackId = generateTrackId();
-    const clipId = generateClipId();
-
-    // Create new track with a clip containing the pattern code
-    const newTrack = {
-      id: trackId,
-      name: pattern.name,
-      color,
-      muted: false,
-      solo: false,
-      height: 100,
-      params: {
-        gain: 0.8,
-        cutoff: 8000,
-        resonance: 0,
-        speed: 1,
-        pan: 0,
-        reverb: 0,
-        reverbSize: 2,
-        delay: 0,
-        delayTime: 0.25,
-        delayFeedback: 0.3,
-        distortion: 0,
-        hpf: 0,
-        phaser: 0,
-        phaserDepth: 0.5,
-      },
-      groove: { swing: 0, humanize: 0 },
-      automation: {
-        gain: { enabled: false, min: 0, max: 1, points: [{ bar: 0, value: 0.8 }] },
-        pan: { enabled: false, min: -1, max: 1, points: [{ bar: 0, value: 0 }] },
-        cutoff: { enabled: false, min: 200, max: 12000, points: [{ bar: 0, value: 8000 }] },
-      },
-      clips: [{
-        id: clipId,
-        patternId: pattern.id,
-        name: pattern.name,
-        startBar: 0,
-        durationBars: 4,
-        color,
-        layers: [{
-          id: generateId(),
-          name: pattern.name,
-          code: pattern.code,
-          muted: false,
-          solo: false,
-          params: pattern.params || {},
-        }],
-      }],
-    };
-
-    // Update arrangement with new track
-    useStore.setState((state) => ({
-      arrangement: {
-        ...state.arrangement,
-        tracks: [...state.arrangement.tracks, newTrack],
-      },
-    }));
-
-    // Select the new clip for editing
-    setEditingClip(trackId, clipId);
+    addPatternAsTrack(pattern);
   };
 
   const toggleCategory = (category) => {

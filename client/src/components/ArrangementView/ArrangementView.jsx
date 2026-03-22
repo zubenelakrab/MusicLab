@@ -31,6 +31,16 @@ export default function ArrangementView() {
   const effectivePixelsPerBar = pixelsPerBar * zoom;
   const totalWidth = arrangement.lengthBars * effectivePixelsPerBar;
 
+  const getLaneContentX = useCallback((e) => {
+    const containerRect = scrollRef.current?.getBoundingClientRect();
+    const currentScrollX = scrollRef.current?.scrollLeft ?? scrollX;
+    if (!containerRect) {
+      return 0;
+    }
+
+    return Math.max(0, e.clientX - containerRect.left - TRACK_CONTROLS_WIDTH + currentScrollX);
+  }, [scrollX]);
+
   // Calculate total tracks height
   const totalTracksHeight = arrangement.tracks.reduce((sum, t) => sum + t.height, 0);
 
@@ -70,8 +80,7 @@ export default function ArrangementView() {
   const handleLaneDoubleClick = (e, trackId) => {
     if (e.target !== e.currentTarget) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const x = getLaneContentX(e);
     const bar = x / effectivePixelsPerBar;
     const snappedBar = snapToGrid
       ? Math.floor(bar * gridSubdivision) / gridSubdivision
@@ -87,8 +96,7 @@ export default function ArrangementView() {
     const patternName = e.dataTransfer.getData('patternName');
 
     if (patternCode) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
+      const x = getLaneContentX(e);
       const bar = x / effectivePixelsPerBar;
       const snappedBar = snapToGrid
         ? Math.floor(bar * gridSubdivision) / gridSubdivision
@@ -107,6 +115,7 @@ export default function ArrangementView() {
       {/* Main scrollable area - unified scroll for controls and clips */}
       <div
         ref={scrollRef}
+        data-arrangement-scroll="true"
         className="flex-1 overflow-auto panel-inset bg-studio-950 m-2 rounded-lg"
         onScroll={handleScroll}
       >
@@ -208,6 +217,8 @@ export default function ArrangementView() {
                       track={track}
                       pixelsPerBar={effectivePixelsPerBar}
                       gridSubdivision={gridSubdivision}
+                      scrollContainerRef={scrollRef}
+                      trackControlsWidth={TRACK_CONTROLS_WIDTH}
                     />
                   ))}
                 </div>

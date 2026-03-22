@@ -9,8 +9,18 @@ import {
   defaultLayerParams,
   getAutomationBounds,
   normalizeTrack,
-} from './arrangementModel';
-import { createUndoMiddleware } from './undoMiddleware';
+} from './arrangementModel.js';
+import { createUndoMiddleware } from './undoMiddleware.js';
+
+const createDefaultArrangementView = () => ({
+  zoom: 1,
+  scrollX: 0,
+  pixelsPerBar: 100,
+  snapToGrid: true,
+  gridSubdivision: 4,
+  selectedClipIds: [],
+  selectedTrackId: null,
+});
 
 export const useStore = create(createUndoMiddleware((set, get) => ({
   // Transport state
@@ -48,15 +58,7 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
   playheadPosition: 0,
 
   // Arrangement view settings
-  arrangementView: {
-    zoom: 1,              // 0.25 - 4
-    scrollX: 0,
-    pixelsPerBar: 100,
-    snapToGrid: true,
-    gridSubdivision: 4,   // 4 = quarter notes
-    selectedClipIds: [],
-    selectedTrackId: null,
-  },
+  arrangementView: createDefaultArrangementView(),
 
   // Currently editing clip (for code editor)
   editingClip: null, // { trackId, clipId }
@@ -669,6 +671,36 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     };
   }),
 
+  addPatternAsTrack: (pattern) => set((state) => {
+    const trackCount = state.arrangement.tracks.length;
+    const track = createTrack(pattern?.name || `Track ${trackCount + 1}`, trackCount);
+    const clip = createClip(0, 4, null, pattern?.name || 'Pattern Clip', track.color, pattern?.code || '');
+
+    clip.patternId = pattern?.id || null;
+    if (clip.layers?.[0]) {
+      clip.layers[0] = {
+        ...clip.layers[0],
+        name: pattern?.name || clip.layers[0].name,
+        params: { ...clip.layers[0].params, ...(pattern?.params || {}) },
+      };
+    }
+
+    track.clips = [clip];
+
+    return {
+      arrangement: {
+        ...state.arrangement,
+        tracks: [...state.arrangement.tracks, track],
+      },
+      arrangementView: {
+        ...state.arrangementView,
+        selectedClipIds: [clip.id],
+        selectedTrackId: track.id,
+      },
+      editingClip: { trackId: track.id, clipId: clip.id },
+    };
+  }),
+
   // Update inline clip layers
   updateClipLayers: (trackId, clipId, layers) => set((state) => ({
     arrangement: {
@@ -896,12 +928,16 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
       tracks: (project.tracks || project.arrangement?.tracks || []).map((track, i) => normalizeTrack(track, i)),
     },
     bpm: project.bpm || 120,
+    playheadPosition: 0,
+    arrangementView: createDefaultArrangementView(),
     editingClip: null,
   }),
 
   resetProject: () => set({
     arrangement: createInitialArrangement(),
     bpm: 120,
+    playheadPosition: 0,
+    arrangementView: createDefaultArrangementView(),
     editingClip: null,
     currentPattern: {
       id: null,

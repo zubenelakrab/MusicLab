@@ -9,12 +9,17 @@ import {
   isVersion2Project,
 } from '../../project/projectFormat';
 
+function hasProjectContent(arrangement) {
+  return arrangement.tracks.some((track) =>
+    track.clips.some((clip) => clip.layers?.some((layer) => layer.code?.trim()))
+  );
+}
+
 export default function FileManager() {
   const fileInputRef = useRef(null);
   const {
     arrangement,
     bpm,
-    setBpm,
   } = useStore();
 
   // Export current composition as JSON (with arrangement tracks)
@@ -39,16 +44,16 @@ export default function FileManager() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (hasProjectContent(arrangement) && !confirm('You have unsaved changes. Import and replace the current project?')) {
+      event.target.value = '';
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const json = e.target?.result;
         const composition = JSON.parse(json);
-
-        // Set BPM if present
-        if (composition.bpm) {
-          setBpm(composition.bpm);
-        }
 
         // Version 2.0 format with arrangement tracks
         if (isVersion2Project(composition.version) && composition.arrangement) {
@@ -79,11 +84,7 @@ export default function FileManager() {
 
   // New composition
   const handleNew = () => {
-    const hasContent = arrangement.tracks.some(t =>
-      t.clips.some(c => c.layers?.some(l => l.code?.trim()))
-    );
-
-    if (hasContent) {
+    if (hasProjectContent(arrangement)) {
       if (!confirm('You have unsaved changes. Create new project?')) {
         return;
       }
