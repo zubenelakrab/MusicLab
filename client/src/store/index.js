@@ -25,7 +25,7 @@ const createDefaultArrangementView = () => ({
 export const useStore = create(createUndoMiddleware((set, get) => ({
   // Transport state
   isPlaying: false,
-  bpm: 172,
+  bpm: 115,
 
   // Default params for patterns
   defaultParams: defaultLayerParams,
@@ -35,7 +35,7 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     id: null,
     name: 'Untitled',
     layers: [
-      createLayer('bd sd', 'Drums'),
+      createLayer('note("e5 e5 e5 c5 e5 g5@2 ~ g4 ~ ~ ~ c5 e5 g5 a5").sound("casio").gain(0.42), bd ~ ~ ~ ~ ~ bd ~ , ~ ~ sd ~ ~ ~ ~ ~ , hh*16', 'Mario + Breaks'),
     ],
     // Global params (for backward compatibility)
     params: { ...defaultLayerParams },
@@ -1005,14 +1005,14 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
 
   resetProject: () => set({
     arrangement: createInitialArrangement(),
-    bpm: 172,
+    bpm: 115,
     playheadPosition: 0,
     arrangementView: createDefaultArrangementView(),
     editingClip: null,
     currentPattern: {
       id: null,
       name: 'Untitled',
-      layers: [createLayer('bd sd', 'Drums')],
+      layers: [createLayer('note("e5 e5 e5 c5 e5 g5@2 ~ g4 ~ ~ ~ c5 e5 g5 ~").sound("casio").gain(0.42), bd ~ ~ ~ ~ ~ bd ~ , ~ ~ sd ~ ~ ~ ~ ~ , hh*16', 'Mario + Breaks')],
       params: { ...defaultLayerParams },
     },
   }),
