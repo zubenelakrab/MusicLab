@@ -225,6 +225,16 @@ MusicLab uses the [Dirt-Samples](https://github.com/tidalcycles/Dirt-Samples) co
 
 ## Changelog
 
+### v2.2.0 (2026-07-12)
+- **Default song**: the app now opens with a ready-to-play drum & bass sketch (intro/break/build/drop drums, reese + rolling sub bass, juno/glass pads, pluck/arpy lead) at a default tempo of 115 BPM; "New" uses the same template.
+- **Effects & sample routing**: the Effects Rack and Sample Browser now edit the clip currently in edition so changes are actually audible in the arrangement.
+- **Preview/transport safety**: previewing a sample no longer halts the running transport, and closing a sequencer while playing no longer stops arrangement playback.
+- **BPM handling**: BPM is validated (finite, > 0, capped at 400) so a bad value can't freeze the scheduler.
+- **Arrangement UX**: fixed the frozen track-control column painting under selected clips on horizontal scroll, tightened TrackControls layout, and removed clipping from the Effects Rack panel.
+- **Sequencer fixes**: swing is preserved when adding a pattern as a track, preview restarts/stops correctly on tempo, step-count, and empty-grid changes, and the melodic sequencer no longer mutates base octave inside a state updater.
+- **Persistence**: server JSON store now writes atomically (temp file + rename) to avoid corruption from concurrent writes; `loadProject` uses nullish fallbacks for loop/length/BPM.
+- **Docs**: updated the README screenshot.
+
 ### v2.1.0 (2026-03-22)
 - **Project persistence overhaul**: unified the canonical project schema across client export/import, autosave, and server API; groove, automation, loop metadata, and legacy projects now round-trip correctly.
 - **Safer loading flows**: opening/importing projects now validates data earlier, prompts before destructive replacement, and resets arrangement view/playhead state when switching projects.
