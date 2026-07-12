@@ -152,7 +152,7 @@ export default function ArrangementView() {
               >
                 {/* Track controls - sticky left */}
                 <div
-                  className="flex-shrink-0 sticky left-0 z-10 bg-studio-800 border-r border-studio-600"
+                  className="flex-shrink-0 sticky left-0 z-30 bg-studio-800 border-r border-studio-600"
                   style={{ width: TRACK_CONTROLS_WIDTH }}
                 >
                   <TrackControls track={track} />
@@ -160,7 +160,7 @@ export default function ArrangementView() {
 
                 {/* Clip lane */}
                 <div
-                  className={`relative flex-1 ${isSelected ? 'bg-studio-800/30' : ''}`}
+                  className={`relative flex-1 z-0 ${isSelected ? 'bg-studio-800/30' : ''}`}
                   style={{ width: totalWidth }}
                   onClick={(e) => {
                     if (e.target === e.currentTarget) {
@@ -229,7 +229,7 @@ export default function ArrangementView() {
           {/* Add track button row */}
           <div className="flex" style={{ height: 40 }}>
             <div
-              className="flex-shrink-0 sticky left-0 z-10 bg-studio-800 border-r border-studio-600 flex items-center px-2"
+              className="flex-shrink-0 sticky left-0 z-30 bg-studio-800 border-r border-studio-600 flex items-center px-2"
               style={{ width: TRACK_CONTROLS_WIDTH }}
             >
               <button

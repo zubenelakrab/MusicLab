@@ -89,7 +89,7 @@ export default function TrackControls({ track }) {
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-col border-b border-studio-700 px-2 py-1.5 ${
+      className={`relative flex flex-col border-b border-studio-700 px-2 py-0.5 ${
         isSelected ? 'bg-studio-700/50' : ''
       }`}
       style={{
@@ -156,7 +156,7 @@ export default function TrackControls({ track }) {
       </div>
 
       {/* Mute/Solo buttons */}
-      <div className="flex items-center gap-1 mb-1.5">
+      <div className="flex items-center gap-1 mb-0.5">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -186,22 +186,24 @@ export default function TrackControls({ track }) {
       </div>
 
       {/* Volume slider */}
-      <div className="flex items-center gap-1.5 mb-1">
+      <div className="flex items-center gap-1.5">
         {track.muted ? (
           <VolumeX size={10} className="text-red-400 flex-shrink-0" />
         ) : (
           <Volume2 size={10} className="text-gray-500 flex-shrink-0" />
         )}
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={track.params.gain}
-          onChange={handleVolumeChange}
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 h-1 bg-studio-600 rounded-lg appearance-none cursor-pointer accent-accent-primary"
-        />
+        <div className="flex-1 overflow-hidden">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={track.params.gain}
+            onChange={handleVolumeChange}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-1 bg-studio-600 rounded-lg appearance-none cursor-pointer accent-accent-primary"
+          />
+        </div>
         <span className="text-[9px] text-gray-500 w-5 text-right">
           {Math.round(track.params.gain * 100)}
         </span>
@@ -210,16 +212,18 @@ export default function TrackControls({ track }) {
       {/* Pan slider */}
       <div className="flex items-center gap-1.5">
         <span className="text-[9px] text-gray-500">L</span>
-        <input
-          type="range"
-          min={-1}
-          max={1}
-          step={0.01}
-          value={track.params.pan}
-          onChange={handlePanChange}
-          onClick={(e) => e.stopPropagation()}
-          className="flex-1 h-1 bg-studio-600 rounded-lg appearance-none cursor-pointer accent-accent-primary"
-        />
+        <div className="flex-1 overflow-hidden">
+          <input
+            type="range"
+            min={-1}
+            max={1}
+            step={0.01}
+            value={track.params.pan}
+            onChange={handlePanChange}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full h-1 bg-studio-600 rounded-lg appearance-none cursor-pointer accent-accent-primary"
+          />
+        </div>
         <span className="text-[9px] text-gray-500">R</span>
       </div>
 

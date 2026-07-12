@@ -25,7 +25,7 @@ const createDefaultArrangementView = () => ({
 export const useStore = create(createUndoMiddleware((set, get) => ({
   // Transport state
   isPlaying: false,
-  bpm: 120,
+  bpm: 172,
 
   // Default params for patterns
   defaultParams: defaultLayerParams,
@@ -1005,7 +1005,7 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
 
   resetProject: () => set({
     arrangement: createInitialArrangement(),
-    bpm: 120,
+    bpm: 172,
     playheadPosition: 0,
     arrangementView: createDefaultArrangementView(),
     editingClip: null,
