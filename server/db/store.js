@@ -1,4 +1,4 @@
-import { readFile, writeFile, access } from 'fs/promises';
+import { readFile, writeFile, access, rename } from 'fs/promises';
 import { constants } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -50,8 +50,12 @@ function withCollectionLock(collection, task) {
 
 async function writeCollection(collection, data) {
   const filePath = getFilePath(collection);
+  // Write to a temp file then atomically rename so a crash mid-write can't
+  // leave a truncated/corrupt JSON file.
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
   try {
-    await writeFile(filePath, JSON.stringify(data, null, 2));
+    await writeFile(tmpPath, JSON.stringify(data, null, 2));
+    await rename(tmpPath, filePath);
   } catch (err) {
     console.error(`Error writing ${collection}.json:`, err);
     throw new Error(`Failed to write ${collection} collection`);

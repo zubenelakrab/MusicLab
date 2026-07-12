@@ -1,31 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, RotateCcw, Waves, Clock, Zap, Filter, Activity } from 'lucide-react';
 import { useStore } from '../../store';
 
+// Static Tailwind class maps so JIT/purge keeps the color variants in the build.
+// (Dynamically-built class names like `border-${color}-500/50` get purged.)
+const COLOR_CLASSES = {
+  blue: {
+    container: 'border-blue-500/50 bg-blue-500/10',
+    icon: 'text-blue-400',
+    label: 'text-blue-400',
+    badge: 'bg-blue-500/30 text-blue-300',
+  },
+  purple: {
+    container: 'border-purple-500/50 bg-purple-500/10',
+    icon: 'text-purple-400',
+    label: 'text-purple-400',
+    badge: 'bg-purple-500/30 text-purple-300',
+  },
+  red: {
+    container: 'border-red-500/50 bg-red-500/10',
+    icon: 'text-red-400',
+    label: 'text-red-400',
+    badge: 'bg-red-500/30 text-red-300',
+  },
+  yellow: {
+    container: 'border-yellow-500/50 bg-yellow-500/10',
+    icon: 'text-yellow-400',
+    label: 'text-yellow-400',
+    badge: 'bg-yellow-500/30 text-yellow-300',
+  },
+  green: {
+    container: 'border-green-500/50 bg-green-500/10',
+    icon: 'text-green-400',
+    label: 'text-green-400',
+    badge: 'bg-green-500/30 text-green-300',
+  },
+};
+
 // Effect section component
 function EffectSection({ name, icon: Icon, active, children, color }) {
+  const c = COLOR_CLASSES[color] || COLOR_CLASSES.blue;
   return (
     <div
       className={`rounded-lg border p-3 transition-all ${
-        active
-          ? `border-${color}-500/50 bg-${color}-500/10`
-          : 'border-studio-600 bg-studio-700/50'
+        active ? c.container : 'border-studio-600 bg-studio-700/50'
       }`}
     >
       <div className="flex items-center gap-2 mb-3">
         <Icon
           size={16}
-          className={active ? `text-${color}-400` : 'text-gray-500'}
+          className={active ? c.icon : 'text-gray-500'}
         />
         <span
-          className={`text-sm font-medium ${
-            active ? `text-${color}-400` : 'text-gray-400'
-          }`}
+          className={`text-sm font-medium ${active ? c.label : 'text-gray-400'}`}
         >
           {name}
         </span>
         {active && (
-          <span className={`ml-auto text-xs px-1.5 py-0.5 rounded bg-${color}-500/30 text-${color}-300 shadow-sm`}>
+          <span className={`ml-auto text-xs px-1.5 py-0.5 rounded ${c.badge} shadow-sm`}>
             ON
           </span>
         )}
@@ -69,38 +101,47 @@ function EffectSlider({ label, value, onChange, min, max, step = 0.01, unit = ''
 }
 
 export default function EffectsRack({ isOpen, onClose }) {
-  const {
-    currentPattern,
-    selectedLayerIndex,
-    updateLayerParams,
-  } = useStore();
+  const editingClip = useStore((s) => s.editingClip);
+  const arrangement = useStore((s) => s.arrangement);
+  const updateEditingClipParams = useStore((s) => s.updateEditingClipParams);
 
   const [localParams, setLocalParams] = useState({});
 
-  // Get selected layer
-  const selectedLayer = currentPattern.layers?.[selectedLayerIndex];
+  // Resolve the clip currently open in the editor - this is what actually plays,
+  // so effects must be written to its layer params (not the legacy currentPattern).
+  const clipInfo = useMemo(() => {
+    if (!editingClip) return null;
+    const track = arrangement.tracks.find((t) => t.id === editingClip.trackId);
+    if (!track) return null;
+    const clip = track.clips.find((c) => c.id === editingClip.clipId);
+    if (!clip) return null;
+    return { track, clip, params: clip.layers?.[0]?.params || null };
+  }, [editingClip, arrangement]);
 
-  // Sync local params with layer params
+  const hasClip = !!clipInfo;
+  const layerParams = clipInfo?.params;
+
+  // Sync local params with the clip layer params
   useEffect(() => {
-    if (selectedLayer?.params) {
+    if (layerParams) {
       setLocalParams({
-        reverb: selectedLayer.params.reverb ?? 0,
-        reverbSize: selectedLayer.params.reverbSize ?? 2,
-        delay: selectedLayer.params.delay ?? 0,
-        delayTime: selectedLayer.params.delayTime ?? 0.25,
-        delayFeedback: selectedLayer.params.delayFeedback ?? 0.3,
-        distortion: selectedLayer.params.distortion ?? 0,
-        hpf: selectedLayer.params.hpf ?? 0,
-        phaser: selectedLayer.params.phaser ?? 0,
-        phaserDepth: selectedLayer.params.phaserDepth ?? 0.5,
+        reverb: layerParams.reverb ?? 0,
+        reverbSize: layerParams.reverbSize ?? 2,
+        delay: layerParams.delay ?? 0,
+        delayTime: layerParams.delayTime ?? 0.25,
+        delayFeedback: layerParams.delayFeedback ?? 0.3,
+        distortion: layerParams.distortion ?? 0,
+        hpf: layerParams.hpf ?? 0,
+        phaser: layerParams.phaser ?? 0,
+        phaserDepth: layerParams.phaserDepth ?? 0.5,
       });
     }
-  }, [selectedLayer, selectedLayerIndex]);
+  }, [layerParams]);
 
-  // Update param locally and in store
+  // Update param locally and in the editing clip (heard in real time)
   const updateParam = (key, value) => {
     setLocalParams(prev => ({ ...prev, [key]: value }));
-    updateLayerParams(selectedLayerIndex, { [key]: value });
+    updateEditingClipParams({ [key]: value });
   };
 
   // Reset all effects
@@ -117,7 +158,7 @@ export default function EffectsRack({ isOpen, onClose }) {
       phaserDepth: 0.5,
     };
     setLocalParams(resetParams);
-    updateLayerParams(selectedLayerIndex, resetParams);
+    updateEditingClipParams(resetParams);
   };
 
   // Check if any effect is active
@@ -129,6 +170,25 @@ export default function EffectsRack({ isOpen, onClose }) {
     localParams.phaser > 0;
 
   if (!isOpen) return null;
+
+  if (!hasClip) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+        <div className="bg-gradient-to-b from-studio-800 to-studio-900 rounded-2xl shadow-panel border border-white/[0.06] animate-scale-in w-full max-w-md p-6 text-center">
+          <h2 className="text-lg font-bold text-white mb-2">Effects Rack</h2>
+          <p className="text-sm text-gray-400 mb-5">
+            Select a clip in the timeline to edit its effects.
+          </p>
+          <button
+            onClick={onClose}
+            className="btn-pro px-4 py-2 bg-accent-primary text-black rounded-lg font-medium hover:bg-emerald-400"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
@@ -153,7 +213,7 @@ export default function EffectsRack({ isOpen, onClose }) {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-400">
-              Layer: <span className="text-white">{selectedLayer?.name || `Layer ${selectedLayerIndex + 1}`}</span>
+              Clip: <span className="text-white">{clipInfo?.clip.name || 'None'}</span>
             </span>
             <button
               onClick={resetAll}
@@ -364,7 +424,7 @@ export default function EffectsRack({ isOpen, onClose }) {
         <div className="px-4 py-3 pro-header border-t border-white/[0.04]">
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">
-              Effects are applied in real time to the selected layer
+              Effects are applied in real time to the selected clip
             </p>
             <button
               onClick={onClose}

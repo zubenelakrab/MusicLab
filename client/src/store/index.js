@@ -65,7 +65,13 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
 
   // Actions
   setPlaying: (playing) => set({ isPlaying: playing }),
-  setBpm: (bpm) => set({ bpm }),
+  setBpm: (bpm) => set(() => {
+    const n = Number(bpm);
+    // Ignore empty/invalid input (e.g. clearing the field yields 0) so the
+    // tempo never collapses to 0 and freezes the scheduler.
+    if (!Number.isFinite(n) || n <= 0) return {};
+    return { bpm: Math.min(400, n) };
+  }),
 
   // Pattern actions
   setCurrentPattern: (pattern) => {
@@ -247,6 +253,19 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     };
   }),
 
+  // Append an already-built track object (used by the Step/Melodic sequencers).
+  // Goes through the store's set so undo history, versioning and autosave stay in sync.
+  addBuiltTrack: (track) => set((state) => ({
+    arrangement: {
+      ...state.arrangement,
+      tracks: [...state.arrangement.tracks, track],
+    },
+    arrangementView: {
+      ...state.arrangementView,
+      selectedTrackId: track.id,
+    },
+  })),
+
   removeArrangementTrack: (trackId) => set((state) => {
     if (state.arrangement.tracks.length <= 1) return state;
     return {
@@ -414,6 +433,13 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
 
   reorderArrangementTracks: (fromIndex, toIndex) => set((state) => {
     const tracks = [...state.arrangement.tracks];
+    if (
+      fromIndex < 0 || fromIndex >= tracks.length ||
+      toIndex < 0 || toIndex >= tracks.length ||
+      fromIndex === toIndex
+    ) {
+      return state;
+    }
     const [removed] = tracks.splice(fromIndex, 1);
     tracks.splice(toIndex, 0, removed);
     return {
@@ -811,6 +837,50 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     };
   }),
 
+  // Update the editing clip's first-layer params (used by Effects Rack)
+  updateEditingClipParams: (params) => set((state) => {
+    if (!state.editingClip) return state;
+    const { trackId, clipId } = state.editingClip;
+
+    return {
+      arrangement: {
+        ...state.arrangement,
+        tracks: state.arrangement.tracks.map(t =>
+          t.id === trackId
+            ? {
+              ...t,
+              clips: t.clips.map(c =>
+                c.id === clipId
+                  ? {
+                    ...c,
+                    layers: c.layers && c.layers.length > 0
+                      ? c.layers.map((layer, i) =>
+                        i === 0
+                          ? { ...layer, params: { ...defaultLayerParams, ...layer.params, ...params } }
+                          : layer
+                      )
+                      : [{ ...createLayer('', 'Layer 1'), params: { ...defaultLayerParams, ...params } }],
+                  }
+                  : c
+              ),
+            }
+            : t
+        ),
+      },
+    };
+  }),
+
+  // Read the editing clip's first-layer params (null when nothing is being edited)
+  getEditingClipParams: () => {
+    const state = get();
+    if (!state.editingClip) return null;
+    const { trackId, clipId } = state.editingClip;
+    const track = state.arrangement.tracks.find(t => t.id === trackId);
+    if (!track) return null;
+    const clip = track.clips.find(c => c.id === clipId);
+    return clip?.layers?.[0]?.params || null;
+  },
+
   setSnapToGrid: (enabled) => set((state) => ({
     arrangementView: {
       ...state.arrangementView,
@@ -917,10 +987,10 @@ export const useStore = create(createUndoMiddleware((set, get) => ({
     arrangement: {
       id: project.id || null,
       name: project.name || 'Untitled',
-      lengthBars: project.arrangement?.lengthBars || project.lengthBars || 32,
-      loopEnabled: project.arrangement?.loopEnabled || project.loopEnabled || false,
-      loopStart: project.arrangement?.loopStart || project.loopStart || 0,
-      loopEnd: project.arrangement?.loopEnd || project.loopEnd || 8,
+      lengthBars: project.arrangement?.lengthBars ?? project.lengthBars ?? 32,
+      loopEnabled: project.arrangement?.loopEnabled ?? project.loopEnabled ?? false,
+      loopStart: project.arrangement?.loopStart ?? project.loopStart ?? 0,
+      loopEnd: project.arrangement?.loopEnd ?? project.loopEnd ?? 8,
       groove: {
         ...defaultGroove,
         ...(project.arrangement?.groove || project.groove || {}),

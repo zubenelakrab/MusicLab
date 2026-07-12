@@ -454,6 +454,8 @@ export function setTempo(bpm) {
   if (repl) {
     const { scheduler } = repl;
     const cps = bpm / 60 / 4;
+    // Guard against non-positive/invalid tempo which would freeze the scheduler.
+    if (!Number.isFinite(cps) || cps <= 0) return;
     currentCps = cps;
     scheduler.setCps(cps);
   }
@@ -577,6 +579,10 @@ export async function startMelodicPreview(notePattern, synth = 'arpy', bpm = 120
 
 export function stopPreview() {
   if (!repl) return;
+
+  // Only act when a preview actually owns the scheduler. Otherwise this would
+  // stop the main arrangement transport (they share one scheduler).
+  if (!isPreviewMode) return;
 
   try {
     const { scheduler } = repl;
@@ -886,29 +892,32 @@ export async function previewSample(sampleName, variant = 0) {
 
     // Get the scheduler and set a fast tempo for immediate playback
     const { scheduler } = repl;
-    const originalCps = scheduler.cps;
 
-    // Set high CPS for fast playback, then schedule stop
     const wasPlaying = scheduler.started;
     const oldPattern = scheduler.pattern;
+    const oldCps = scheduler.cps;
 
-    scheduler.setCps(2);
     if (wasPlaying && oldPattern) {
+      // Transport is running: stack a one-shot on top without disturbing tempo,
+      // then restore the original pattern. Never stop the shared scheduler here.
       scheduler.setPattern(oldPattern.stack(pattern));
+      setTimeout(() => {
+        scheduler.setPattern(oldPattern);
+      }, 500);
     } else {
+      // Nothing playing: start briefly for the preview, then stop and restore.
+      scheduler.setCps(2);
       scheduler.setPattern(pattern);
       scheduler.start();
+      setTimeout(() => {
+        scheduler.stop();
+        scheduler.setCps(oldCps);
+        // Restore previous pattern if we were in preview mode
+        if (savedLayers && savedLayers.length > 0) {
+          currentLayers = savedLayers;
+        }
+      }, 500);
     }
-
-    // Stop after a short duration (500ms should be enough for most samples)
-    setTimeout(() => {
-      scheduler.stop();
-      scheduler.setCps(originalCps);
-      // Restore previous pattern if we were in preview mode
-      if (savedLayers && savedLayers.length > 0) {
-        currentLayers = savedLayers;
-      }
-    }, 500);
 
     return true;
   } catch (err) {

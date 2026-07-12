@@ -2307,7 +2307,7 @@ export default function Visualizer({ isOpen, onClose }) {
       const { bass } = getAudioLevels();
       ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
       const fontSize = 14; const cols = Math.floor(canvas.width / fontSize);
-      if (!extraRef.current.matrixDrops) extraRef.current.matrixDrops = new Array(cols).fill(0).map(() => Math.random() * canvas.height / fontSize);
+      if (!extraRef.current.matrixDrops || extraRef.current.matrixDrops.length !== cols) extraRef.current.matrixDrops = new Array(cols).fill(0).map(() => Math.random() * canvas.height / fontSize);
       const drops = extraRef.current.matrixDrops;
       ctx.font = `${fontSize}px monospace`;
       for (let i = 0; i < cols; i++) {

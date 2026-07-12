@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Play, Square, Copy, Trash2, Plus, Minus, RotateCcw, Shuffle, Volume2, VolumeX, ChevronLeft, ChevronRight, MoreHorizontal, GripVertical } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
-import { initAudio, startPreview, stopPreview } from '../../strudel/engine';
+import { initAudio, startPreview, stopPreview, isInPreviewMode } from '../../strudel/engine';
 import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 import { SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
 
@@ -458,7 +458,7 @@ const TRACK_COLORS = [
 ];
 
 export default function StepSequencer({ isOpen, onClose }) {
-  const { arrangement, setEditingClip, bpm, setPlaying } = useStore();
+  const { arrangement, setEditingClip, bpm, setPlaying, addBuiltTrack } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
   // Core state
@@ -490,12 +490,16 @@ export default function StepSequencer({ isOpen, onClose }) {
   const [randomDensity, setRandomDensity] = useState(30);
 
   const stopPreviewPlayback = useCallback((resetPreviewState = true) => {
+    const wasPreviewing = isInPreviewMode();
     stopPreview();
     if (resetPreviewState) {
       setIsPreviewPlaying(false);
     }
-    // Preview uses the same scheduler, so the main transport must be marked as stopped.
-    setPlaying(false);
+    // Only sync the transport off when a preview actually owned the scheduler,
+    // so closing the panel doesn't stop unrelated arrangement playback.
+    if (wasPreviewing) {
+      setPlaying(false);
+    }
   }, [setPlaying]);
 
   // Initialize grid and row state when sounds or steps change
@@ -884,7 +888,7 @@ export default function StepSequencer({ isOpen, onClose }) {
         reverb: 0, reverbSize: 2, delay: 0, delayTime: 0.25, delayFeedback: 0.3,
         distortion: 0, hpf: 0, phaser: 0, phaserDepth: 0.5,
       },
-      groove: { swing: 0, humanize: 0 },
+      groove: { swing, humanize: 0 },
       automation: {
         gain: { enabled: false, min: 0, max: 1, points: [{ bar: 0, value: 1 }] },
         pan: { enabled: false, min: -1, max: 1, points: [{ bar: 0, value: 0 }] },
@@ -908,12 +912,7 @@ export default function StepSequencer({ isOpen, onClose }) {
       }],
     };
 
-    useStore.setState((state) => ({
-      arrangement: {
-        ...state.arrangement,
-        tracks: [...state.arrangement.tracks, newTrack],
-      },
-    }));
+    addBuiltTrack(newTrack);
 
     setEditingClip(trackId, clipId);
     onClose();
@@ -947,19 +946,23 @@ export default function StepSequencer({ isOpen, onClose }) {
     }
   };
 
-  // Update preview when pattern or swing changes during playback
+  // Update preview when pattern, swing or tempo changes during playback
   useEffect(() => {
-    if (isPreviewPlaying && previewCode && previewCode !== '~') {
-      const updatePreview = async () => {
-        stopPreviewPlayback(false);
-        const result = await startPreview(previewCode, bpm, swing);
-        if (!result.success) {
-          setIsPreviewPlaying(false);
-        }
-      };
-      updatePreview();
+    if (!isPreviewPlaying) return;
+    if (!previewCode || previewCode === '~') {
+      // Grid became empty while previewing: stop instead of looping stale audio.
+      stopPreviewPlayback();
+      return;
     }
-  }, [previewCode, swing]);
+    const updatePreview = async () => {
+      stopPreviewPlayback(false);
+      const result = await startPreview(previewCode, bpm, swing);
+      if (!result.success) {
+        setIsPreviewPlaying(false);
+      }
+    };
+    updatePreview();
+  }, [previewCode, swing, bpm]);
 
   // Cleanup on unmount
   useEffect(() => {

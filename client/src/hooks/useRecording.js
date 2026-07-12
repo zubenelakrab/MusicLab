@@ -52,7 +52,9 @@ export function useRecording() {
 
     try {
       let finalBlob = blob;
-      let ext = 'webm';
+      // Derive the extension from the actual blob type so the fallback isn't
+      // mislabeled (e.g. audio/ogg saved as .webm).
+      let ext = (blob.type && blob.type.includes('ogg')) ? 'ogg' : 'webm';
       let filename = `musiclab-${Date.now()}`;
 
       if (format === 'wav') {

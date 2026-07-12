@@ -5,7 +5,9 @@ import { SAMPLES_BY_CATEGORY, SAMPLE_VARIANT_COUNTS, ALL_SAMPLE_NAMES, CATEGORY_
 import { previewSample } from '../../strudel/engine';
 
 export default function SampleBrowser({ isOpen, onClose }) {
-  const { currentPattern, selectedLayerIndex, updateLayerCode } = useStore();
+  const editingClip = useStore((s) => s.editingClip);
+  const arrangement = useStore((s) => s.arrangement);
+  const updateEditingClipCode = useStore((s) => s.updateEditingClipCode);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSample, setSelectedSample] = useState(null);
@@ -14,8 +16,18 @@ export default function SampleBrowser({ isOpen, onClose }) {
   const [isPlaying, setIsPlaying] = useState(null);
   const [recentSamples, setRecentSamples] = useState([]);
 
-  const currentLayer = currentPattern.layers?.[selectedLayerIndex];
-  const currentCode = currentLayer?.code || '';
+  // Resolve the clip currently open in the editor (this is what actually plays)
+  const editingInfo = useMemo(() => {
+    if (!editingClip) return null;
+    const track = arrangement.tracks.find((t) => t.id === editingClip.trackId);
+    if (!track) return null;
+    const clip = track.clips.find((c) => c.id === editingClip.clipId);
+    if (!clip) return null;
+    return { track, clip, code: clip.layers?.[0]?.code || '' };
+  }, [editingClip, arrangement]);
+
+  const currentCode = editingInfo?.code || '';
+  const hasClip = !!editingInfo;
 
   // Filter samples
   const filteredSamples = useMemo(() => {
@@ -52,9 +64,10 @@ export default function SampleBrowser({ isOpen, onClose }) {
 
   // Insert sample
   const handleInsert = (sample, variant = 0) => {
+    if (!hasClip) return;
     const code = variant > 0 ? `${sample}:${variant}` : sample;
     const newCode = currentCode ? `${currentCode} ${code}` : code;
-    updateLayerCode(selectedLayerIndex, newCode);
+    updateEditingClipCode(newCode);
 
     // Add to recents
     setRecentSamples(prev => {
@@ -121,9 +134,11 @@ export default function SampleBrowser({ isOpen, onClose }) {
                 <List size={16} />
               </button>
             </div>
-            {/* Layer indicator */}
+            {/* Target clip indicator */}
             <span className="text-sm text-gray-400">
-              Layer: <span className="text-white">{currentLayer?.name || `Layer ${selectedLayerIndex + 1}`}</span>
+              {hasClip
+                ? <>Clip: <span className="text-white">{editingInfo.clip.name}</span></>
+                : <span className="text-yellow-500">No clip selected</span>}
             </span>
             <button onClick={onClose} className="btn-pro p-1.5 text-gray-400 hover:text-white hover:bg-red-600/20 rounded-lg">
               <X size={20} />
@@ -380,10 +395,11 @@ export default function SampleBrowser({ isOpen, onClose }) {
               <div className="px-4 py-3 bg-studio-700 border-t border-studio-600">
                 <button
                   onClick={() => {
+                    if (!hasClip) return;
                     // Insert all variants as alternating pattern
                     const code = `<${variants.map(v => `${selectedSample}:${v}`).join(' ')}>`;
                     const newCode = currentCode ? `${currentCode} ${code}` : code;
-                    updateLayerCode(selectedLayerIndex, newCode);
+                    updateEditingClipCode(newCode);
                   }}
                   className="w-full px-3 py-2 text-xs bg-purple-600/30 text-purple-300 rounded hover:bg-purple-600/50"
                 >

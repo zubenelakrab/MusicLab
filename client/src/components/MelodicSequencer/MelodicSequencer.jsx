@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Play, Square, Copy, Trash2, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Plus, Shuffle, ArrowUp, ArrowDown } from 'lucide-react';
 import { useStore } from '../../store';
 import { useStrudel } from '../../hooks/useStrudel';
-import { initAudio, startMelodicPreview, stopPreview } from '../../strudel/engine';
+import { initAudio, startMelodicPreview, stopPreview, isInPreviewMode } from '../../strudel/engine';
 import { generateId, generateTrackId, generateClipId } from '../../utils/id';
 import { SAMPLE_NAMES, SAMPLE_VARIANT_COUNTS } from '../../data/samples';
 
@@ -580,7 +580,7 @@ function hexToRgba(hex, alpha) {
 }
 
 export default function MelodicSequencer({ isOpen, onClose }) {
-  const { arrangement, setEditingClip, bpm, setPlaying } = useStore();
+  const { arrangement, setEditingClip, bpm, setPlaying, addBuiltTrack } = useStore();
   const { initializeAudio, audioReady } = useStrudel();
 
   // Core state
@@ -600,12 +600,16 @@ export default function MelodicSequencer({ isOpen, onClose }) {
   const gridRef = useRef(null);
 
   const stopPreviewPlayback = useCallback((resetPreviewState = true) => {
+    const wasPreviewing = isInPreviewMode();
     stopPreview();
     if (resetPreviewState) {
       setIsPreviewPlaying(false);
     }
-    // Preview uses the same scheduler, so the main transport must be marked as stopped.
-    setPlaying(false);
+    // Only sync the transport off when a preview actually owned the scheduler,
+    // so closing the panel doesn't stop unrelated arrangement playback.
+    if (wasPreviewing) {
+      setPlaying(false);
+    }
   }, [setPlaying]);
 
 
@@ -847,19 +851,17 @@ export default function MelodicSequencer({ isOpen, onClose }) {
 
   // Helper: shift all notes in grid by semitones and auto-fit view
   const shiftAllNotes = (semitones) => {
-    setGrid(prev => {
-      const newGrid = {};
-      Object.entries(prev).forEach(([step, notes]) => {
-        const newNotes = {};
-        Object.entries(notes).forEach(([noteKey, vel]) => {
-          const shifted = shiftNoteKey(noteKey, semitones);
-          if (shifted) newNotes[shifted] = vel;
-        });
-        if (Object.keys(newNotes).length > 0) newGrid[step] = newNotes;
+    const newGrid = {};
+    Object.entries(grid).forEach(([step, notes]) => {
+      const newNotes = {};
+      Object.entries(notes).forEach(([noteKey, vel]) => {
+        const shifted = shiftNoteKey(noteKey, semitones);
+        if (shifted) newNotes[shifted] = vel;
       });
-      scrollToNotes(newGrid);
-      return newGrid;
+      if (Object.keys(newNotes).length > 0) newGrid[step] = newNotes;
     });
+    setGrid(newGrid);
+    scrollToNotes(newGrid);
   };
 
   const transposeUp = () => shiftAllNotes(1);
@@ -1037,12 +1039,7 @@ export default function MelodicSequencer({ isOpen, onClose }) {
       }],
     };
 
-    useStore.setState((state) => ({
-      arrangement: {
-        ...state.arrangement,
-        tracks: [...state.arrangement.tracks, newTrack],
-      },
-    }));
+    addBuiltTrack(newTrack);
 
     setEditingClip(trackId, clipId);
     onClose();
@@ -1079,25 +1076,27 @@ export default function MelodicSequencer({ isOpen, onClose }) {
     }
   };
 
-  // Update preview when grid/synth changes during playback
+  // Update preview when grid/synth/tempo/steps change during playback
   useEffect(() => {
-    if (isPreviewPlaying) {
-      const notePattern = generateNotePattern();
-      if (notePattern) {
-        const updatePreviewPattern = async () => {
-          stopPreviewPlayback(false);
-          const gainInfo = getGainInfo();
-          const canUseVariation = supportsVariantSuffix(synth);
-          const synthToken = synthVariation > 0 && canUseVariation ? `${synth}:${synthVariation}` : synth;
-          const result = await startMelodicPreview(notePattern, synthToken, bpm, gainInfo);
-          if (!result.success) {
-            setIsPreviewPlaying(false);
-          }
-        };
-        updatePreviewPattern();
-      }
+    if (!isPreviewPlaying) return;
+    const notePattern = generateNotePattern();
+    if (!notePattern) {
+      // Grid became empty while previewing: stop instead of looping stale audio.
+      stopPreviewPlayback();
+      return;
     }
-  }, [grid, synth, synthVariation]);
+    const updatePreviewPattern = async () => {
+      stopPreviewPlayback(false);
+      const gainInfo = getGainInfo();
+      const canUseVariation = supportsVariantSuffix(synth);
+      const synthToken = synthVariation > 0 && canUseVariation ? `${synth}:${synthVariation}` : synth;
+      const result = await startMelodicPreview(notePattern, synthToken, bpm, gainInfo);
+      if (!result.success) {
+        setIsPreviewPlaying(false);
+      }
+    };
+    updatePreviewPattern();
+  }, [grid, synth, synthVariation, bpm, steps]);
 
   // Cleanup
   useEffect(() => {
